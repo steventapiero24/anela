@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar as CalendarIcon, Edit3, Save, Mail, Phone, Heart, Clock, CheckCircle, RefreshCw, LogOut, Check } from 'lucide-react';
 
-const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingProfile, editForm, setEditForm, handleSaveProfile, appointments, startReschedule, cancelAppointment, AVATARS }) => (
+const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingProfile, editForm, setEditForm, handleSaveProfile, appointments, startReschedule, cancelAppointment, AVATARS, handleLogout }) => (
   <div className="space-y-8 animate-in pb-10">
     <div className="flex flex-col items-center">
       <div className="relative">
@@ -142,7 +142,7 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
       </div>
     </section>
 
-    <button onClick={() => {setUser(null); setStep('home'); setIsEditingProfile(false)}} className="w-full py-6 text-red-400 font-bold text-sm flex items-center justify-center gap-2 bg-white rounded-[2rem] shadow-sm border border-red-50">
+    <button onClick={handleLogout} className="w-full py-6 text-red-400 font-bold text-sm flex items-center justify-center gap-2 bg-white rounded-[2rem] shadow-sm border border-red-50">
       <LogOut size={18} /> Cerrar Sesión
     </button>
   </div>

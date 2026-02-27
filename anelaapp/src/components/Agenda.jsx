@@ -130,6 +130,18 @@ const App = () => {
     setSelectedTime(null);
   };
 
+  // cerrar sesión limpio
+  const handleLogout = () => {
+    setUser(null);
+    setStep('home');
+    setIsEditingProfile(false);
+    setAppointments([]);
+    setCart([]);
+    setSelectedDate(null);
+    setSelectedTime(null);
+  };
+
+
   const cancelAppointment = (id) => {
     setAppointments(appointments.filter(a => a.id !== id));
   };
@@ -174,7 +186,7 @@ const App = () => {
         {step === 'confirmation' && <ConfirmationView setStep={setStep} />}
 
         {/* PROFILE VIEW */}
-        {step === 'profile' && user && <ProfileView user={user} setUser={setUser} setStep={setStep} isEditingProfile={isEditingProfile} setIsEditingProfile={setIsEditingProfile} editForm={editForm} setEditForm={setEditForm} handleSaveProfile={handleSaveProfile} appointments={appointments} startReschedule={startReschedule} cancelAppointment={cancelAppointment} AVATARS={AVATARS} />}
+        {step === 'profile' && user && <ProfileView user={user} setUser={setUser} setStep={setStep} isEditingProfile={isEditingProfile} setIsEditingProfile={setIsEditingProfile} editForm={editForm} setEditForm={setEditForm} handleSaveProfile={handleSaveProfile} appointments={appointments} startReschedule={startReschedule} cancelAppointment={cancelAppointment} AVATARS={AVATARS} handleLogout={handleLogout} />}
 
       </main>
 
