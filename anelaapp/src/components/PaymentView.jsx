@@ -95,8 +95,8 @@ const PaymentView = ({ handleAuth }) => {
 
     setLoading(true);
     try {
-      // Pasar los datos de login a handleAuth sin validación contra servidor
-      await handleAuth(loginData);
+      // solicitar autenticación a supabase desde Agenda
+      await handleAuth('login', loginData);
     } catch (error) {
       // Error silencioso - handleAuth maneja el flujo
     }
@@ -161,13 +161,14 @@ const PaymentView = ({ handleAuth }) => {
 
     setLoading(true);
     try {
-      // Completar el registro del usuario con los datos de pago
-      await handleAuth(signupData);
-      // Redirigir o mostrar confirmación
+      console.log('tarjeta mock procesada:', paymentData);
+      await handleAuth('signup', signupData);
     } catch (error) {
-      setErrors({ submit: 'Error al procesar el pago' });
+      console.error('signup error:', error?.message || error);
+      setErrors({ submit: error?.message || 'Error al completar el registro. Intenta de nuevo.' });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Render del formulario de pago
@@ -177,6 +178,7 @@ const PaymentView = ({ handleAuth }) => {
         <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-gray-100">
           <h2 className="text-3xl font-black mb-2 italic tracking-tighter text-[#3D5645]">Información de Pago</h2>
           <p className="text-gray-500 text-sm mb-8">Completa tus datos de pago para completar tu registro</p>
+          <p className="text-[10px] text-gray-400 italic mb-4">(mock) usa tarjeta 4242 4242 4242 4242, cualquier vencimiento y CVV</p>
           
           <form onSubmit={handlePaymentSubmit} className="space-y-5">
             <div className="space-y-1">

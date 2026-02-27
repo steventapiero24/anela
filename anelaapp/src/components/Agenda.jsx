@@ -10,6 +10,21 @@ import ConfirmationView from './ConfirmationView';
 import ProfileView from './ProfileView';
 import NavBar from './NavBar';
 
+// supabase helpers
+import {
+  supabase,
+  signIn,
+  signUp,
+  signOut,
+  getUserProfile,
+  upsertProfile,
+  fetchAppointments,
+  addAppointment as dbAddAppointment,
+  updateAppointment as dbUpdateAppointment,
+  deleteAppointment as dbDeleteAppointment,
+  getCurrentSession,
+} from '../lib/supabaseClient';
+
 const App = () => {
   // --- ESTADOS ---
   const [step, setStep] = useState('home'); 
@@ -29,6 +44,38 @@ const App = () => {
     phone: "",
     avatar: ""
   });
+
+  // persistencia de sesion
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const sessionUser = await getCurrentSession();
+        if (sessionUser) {
+          // sessionUser may be full profile or just user object
+          const id = sessionUser.id || sessionUser.user?.id || sessionUser.uid;
+          const profile = await getUserProfile(id);
+          const userObj = profile || sessionUser;
+          setUser(userObj);
+          setEditForm({
+            full_name: userObj.full_name || '',
+            email: userObj.email || sessionUser.email || '',
+            phone: userObj.phone || '',
+            avatar: userObj.avatar || AVATARS[1],
+          });
+          const appts = await fetchAppointments(id);
+          setAppointments(appts || []);
+        }
+      } catch (err) {
+        console.error('init session error', err);
+      }
+    };
+    init();
+
+    // we don't need to listen for auth state changes here;
+    // session persistence is handled by getCurrentSession on mount.
+    // returning noop cleanup
+    return () => {}
+  }, []);
 
   // --- DATOS MOCK ---
   const CATEGORIES = [
@@ -74,64 +121,97 @@ const App = () => {
     }
   };
 
-  const handleAuth = (formData) => {
-    // Aceptar datos del formulario (login, signup, o evento del formulario antiguo)
-    const firstName = formData?.firstName || '';
-    const lastName = formData?.lastName || '';
-    const email = formData?.email || 'user@example.com';
-    const phone = formData?.phone || '+1 234 567 890';
-    
-    const fullName = (firstName && lastName) 
-      ? `${firstName} ${lastName}`.trim()
-      : "Leslie Alexander";
+  const handleAuth = async (mode, formData) => {
+    // mode = 'login' | 'signup'
+    try {
+      let authUser;
+      if (mode === 'login') {
+        authUser = await signIn({ email: formData.email, password: formData.password });
+      } else if (mode === 'signup') {
+        authUser = await signUp({ email: formData.email, password: formData.password });
+        // create profile immediately
+        const profile = {
+          id: authUser.id,
+          email: formData.email,
+          full_name: `${formData.firstName} ${formData.lastName}`.trim(),
+          phone: formData.phone,
+          avatar: AVATARS[1],
+          points: 0,
+        };
+        await upsertProfile(profile);
+      }
 
-    const mockUser = {
-      full_name: fullName,
-      email: email,
-      phone: phone,
-      avatar: AVATARS[1],
-      points: 850
-    };
-    
-    setUser(mockUser);
-    setEditForm({
-      full_name: mockUser.full_name,
-      email: mockUser.email,
-      phone: mockUser.phone,
-      avatar: mockUser.avatar
-    });
-    
-    if (cart.length > 0) saveAppointment();
-    else setStep('home');
+      // fetch profile and appointments
+      const profile = await getUserProfile(authUser.id);
+      const userObj = profile || { id: authUser.id, email: authUser.email };
+
+      setUser(userObj);
+      setEditForm({
+        full_name: userObj.full_name || '',
+        email: userObj.email || authUser.email,
+        phone: userObj.phone || '',
+        avatar: userObj.avatar || AVATARS[1],
+      });
+
+      const appts = await fetchAppointments(authUser.id);
+      setAppointments(appts || []);
+
+      if (cart.length > 0) await saveAppointment();
+      else setStep('home');
+    } catch (err) {
+      console.error('auth error:', err.message || err);
+      throw err;
+    }
   };
 
-  const saveAppointment = () => {
+  const saveAppointment = async () => {
+    if (!user) return;
+
     if (reschedulingId) {
-      setAppointments(appointments.map(appt => 
-        appt.id === reschedulingId 
-          ? { ...appt, date: selectedDate, time: selectedTime } 
-          : appt
-      ));
-      setReschedulingId(null);
+      try {
+        await dbUpdateAppointment(reschedulingId, {
+          date: selectedDate,
+          time: selectedTime,
+        });
+        setAppointments(appointments.map(appt =>
+          appt.id === reschedulingId
+            ? { ...appt, date: selectedDate, time: selectedTime }
+            : appt
+        ));
+        setReschedulingId(null);
+      } catch (err) {
+        console.error('update appt error', err);
+      }
     } else {
-      const newAppt = {
-        id: Math.random().toString(36).substr(2, 9),
-        services: [...cart],
+      const payload = {
+        user_id: user.id,
+        services: cart,
         date: selectedDate || "24 Feb",
         time: selectedTime || "10:00 AM",
         status: "Confirmado",
         timestamp: new Date().toLocaleDateString()
       };
-      setAppointments([newAppt, ...appointments]);
+      try {
+        const inserted = await dbAddAppointment(payload);
+        setAppointments([inserted, ...appointments]);
+      } catch (err) {
+        console.error('add appt error', err);
+      }
     }
+
     setStep('confirmation');
     setCart([]);
     setSelectedDate(null);
     setSelectedTime(null);
   };
 
-  const cancelAppointment = (id) => {
+  const cancelAppointment = async (id) => {
     setAppointments(appointments.filter(a => a.id !== id));
+    try {
+      await dbDeleteAppointment(id);
+    } catch (err) {
+      console.error('delete appt error', err);
+    }
   };
 
   const startReschedule = (appt) => {
@@ -142,9 +222,37 @@ const App = () => {
     setStep('calendar');
   };
 
-  const handleSaveProfile = () => {
-    setUser({ ...user, ...editForm });
+  const handleSaveProfile = async () => {
+    const updated = { ...user, ...editForm };
+    setUser(updated);
     setIsEditingProfile(false);
+    try {
+      await upsertProfile({
+        id: user.id,
+        full_name: updated.full_name,
+        email: updated.email,
+        phone: updated.phone,
+        avatar: updated.avatar,
+        points: updated.points || 0,
+      });
+    } catch (err) {
+      console.error('save profile error', err);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error('supabase signOut error', err);
+    }
+    setUser(null);
+    setStep('home');
+    setIsEditingProfile(false);
+    setAppointments([]);
+    setCart([]);
+    setSelectedDate(null);
+    setSelectedTime(null);
   };
 
   return (
@@ -174,7 +282,7 @@ const App = () => {
         {step === 'confirmation' && <ConfirmationView setStep={setStep} />}
 
         {/* PROFILE VIEW */}
-        {step === 'profile' && user && <ProfileView user={user} setUser={setUser} setStep={setStep} isEditingProfile={isEditingProfile} setIsEditingProfile={setIsEditingProfile} editForm={editForm} setEditForm={setEditForm} handleSaveProfile={handleSaveProfile} appointments={appointments} startReschedule={startReschedule} cancelAppointment={cancelAppointment} AVATARS={AVATARS} />}
+        {step === 'profile' && user && <ProfileView user={user} setUser={setUser} setStep={setStep} isEditingProfile={isEditingProfile} setIsEditingProfile={setIsEditingProfile} editForm={editForm} setEditForm={setEditForm} handleSaveProfile={handleSaveProfile} appointments={appointments} startReschedule={startReschedule} cancelAppointment={cancelAppointment} AVATARS={AVATARS} handleLogout={handleLogout} />}
 
       </main>
 

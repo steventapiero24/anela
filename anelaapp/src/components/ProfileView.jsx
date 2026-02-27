@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar as CalendarIcon, Edit3, Save, Mail, Phone, Heart, Clock, CheckCircle, RefreshCw, LogOut, Check } from 'lucide-react';
 
-const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingProfile, editForm, setEditForm, handleSaveProfile, appointments, startReschedule, cancelAppointment, AVATARS }) => (
+const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingProfile, editForm, setEditForm, handleSaveProfile, appointments, startReschedule, cancelAppointment, AVATARS, handleLogout }) => (
   <div className="space-y-8 animate-in pb-10">
     <div className="flex flex-col items-center">
       <div className="relative">
