@@ -142,7 +142,7 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
       </div>
     </section>
 
-    <button onClick={() => {setUser(null); setStep('home'); setIsEditingProfile(false)}} className="w-full py-6 text-red-400 font-bold text-sm flex items-center justify-center gap-2 bg-white rounded-[2rem] shadow-sm border border-red-50">
+    <button onClick={handleLogout} className="w-full py-6 text-red-400 font-bold text-sm flex items-center justify-center gap-2 bg-white rounded-[2rem] shadow-sm border border-red-50">
       <LogOut size={18} /> Cerrar Sesión
     </button>
   </div>

@@ -121,8 +121,9 @@ const App = () => {
     }
   };
 
-  const handleAuth = async (mode, formData) => {
+  const handleAuth = async (mode, formData, options = {}) => {
     // mode = 'login' | 'signup'
+    // options.skipSave -> avoid creating appointment immediately (used during payment flow)
     try {
       let authUser;
       if (mode === 'login') {
@@ -150,22 +151,23 @@ const App = () => {
         full_name: userObj.full_name || '',
         email: userObj.email || authUser.email,
         phone: userObj.phone || '',
-        avatar: userObj.avatar || AVATARS[1],
+        avatar: userObj.avatar || AVATARS[1], 
       });
 
       const appts = await fetchAppointments(authUser.id);
       setAppointments(appts || []);
 
-      if (cart.length > 0) await saveAppointment();
-      else setStep('home');
+      if (cart.length > 0 && !options.skipSave) await saveAppointment(authUser.id);
+      else if (cart.length === 0) setStep('home');
     } catch (err) {
       console.error('auth error:', err.message || err);
       throw err;
     }
   };
 
-  const saveAppointment = async () => {
-    if (!user) return;
+  const saveAppointment = async (userId = null) => {
+    const currentUser = userId ? { id: userId } : user;
+    if (!currentUser) return;
 
     if (reschedulingId) {
       try {
@@ -184,7 +186,7 @@ const App = () => {
       }
     } else {
       const payload = {
-        user_id: user.id,
+        user_id: currentUser.id,
         services: cart,
         date: selectedDate || "24 Feb",
         time: selectedTime || "10:00 AM",
@@ -276,7 +278,17 @@ const App = () => {
         {step === 'calendar' && <CalendarView setStep={setStep} cart={cart} removeFromCart={removeFromCart} CATEGORIES={CATEGORIES} selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTime={selectedTime} setSelectedTime={setSelectedTime} user={user} saveAppointment={saveAppointment} reschedulingId={reschedulingId} />}
 
         {/* AUTH VIEW */}
-        {step === 'payment' && <PaymentView handleAuth={handleAuth} />}
+        {step === 'payment' && (
+          <PaymentView
+            handleAuth={handleAuth}
+            user={user}
+            cart={cart}
+            saveAppointment={saveAppointment}
+            setStep={setStep}
+            selectedDate={selectedDate}
+            selectedTime={selectedTime}
+          />
+        )}
 
         {/* CONFIRMATION VIEW */}
         {step === 'confirmation' && <ConfirmationView setStep={setStep} />}

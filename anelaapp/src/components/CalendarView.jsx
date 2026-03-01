@@ -57,10 +57,10 @@ const CalendarView = ({ setStep, cart, removeFromCart, CATEGORIES, selectedDate,
        <div className="flex flex-col gap-3 mt-10">
          <button 
            disabled={!selectedDate || !selectedTime}
-           onClick={() => user ? saveAppointment() : setStep('payment')}
+           onClick={() => reschedulingId ? saveAppointment() : setStep('payment')}
            className="w-full bg-[#3D5645] text-white py-5 rounded-[1.5rem] font-bold shadow-xl shadow-[#3D5645]/20 disabled:opacity-30 uppercase tracking-widest text-[10px] transition-all hover:scale-[1.02] active:scale-95"
          >
-           {reschedulingId ? "Confirmar Cambio" : (user ? "Confirmar Reserva" : "Continuar al Pago")}
+           {reschedulingId ? "Confirmar Cambio" : "Ir a Pago"}
          </button>
        </div>
     </div>

@@ -16,9 +16,12 @@ const ServicesView = ({ setStep, selectedCategory, SERVICES, cart, addToCart }) 
           <div className="flex-1">
             <h4 className="font-bold text-sm">{s.name}</h4>
             <p className="text-[10px] text-gray-400 font-bold uppercase">{s.time} • Experto</p>
-            <div className="flex items-center gap-1 mt-1">
-              <Star size={10} className="fill-yellow-400 text-yellow-400" />
-              <span className="text-[10px] font-bold text-gray-500">{s.rating}</span>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-2xl font-black text-[#3D5645]">${s.price.toFixed(2)}</span>
+              <div className="flex items-center gap-1">
+                <Star size={10} className="fill-yellow-400 text-yellow-400" />
+                <span className="text-[10px] font-bold text-gray-500">{s.rating}</span>
+              </div>
             </div>
           </div>
           <button 
