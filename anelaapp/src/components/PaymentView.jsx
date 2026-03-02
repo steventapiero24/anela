@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
-const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selectedDate, selectedTime }) => {
+const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selectedDate, selectedTime, reschedulingId, savedCards = [], addSavedCard }) => {
   // show reservation details helper
   const ReservationInfo = () => (
     <div className="bg-gray-100 p-4 rounded-2xl mb-6 text-sm text-gray-600">
@@ -9,6 +9,37 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
     </div>
   );
 
+  // if we're rescheduling, there's no payment required
+  if (reschedulingId) {
+    return (
+      <div className="max-w-md mx-auto pt-10">
+        <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-gray-100 text-center">
+          <h2 className="text-3xl font-black mb-4 italic tracking-tighter text-[#3D5645]">
+            Reprogramación sin pago
+          </h2>
+          <p className="text-gray-600 mb-6">
+            No se requiere pago para cambiar la fecha u horario de tu cita.
+          </p>
+          {selectedDate && selectedTime && <ReservationInfo />}
+          <div className="flex gap-3 mt-8">
+            <button
+              onClick={() => setStep('calendar')}
+              className="flex-1 py-5 rounded-3xl font-bold shadow-xl uppercase text-[10px] tracking-widest border border-gray-200 text-gray-600"
+            >
+              Volver
+            </button>
+            <button
+              onClick={saveAppointment}
+              className="flex-1 bg-[#3D5645] text-white py-5 rounded-3xl font-bold shadow-xl uppercase text-[10px] tracking-widest active:scale-95 transition-all"
+            >
+              Confirmar Reagendación
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // === shared state/hooks ===
   const [paymentData, setPaymentData] = useState({
     cardName: (user && user.full_name) || '',
@@ -16,6 +47,30 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
     expiryDate: '',
     cvv: '',
   });
+
+  // decisions about saved cards
+  const [choosingCard, setChoosingCard] = useState(savedCards && savedCards.length > 0);
+  const [selectedCard, setSelectedCard] = useState(null); // object from savedCards or null for new
+
+  React.useEffect(() => {
+    // if user chooses a saved card, prefill paymentData (cvv always blank)
+    if (selectedCard) {
+      setPaymentData(prev => ({
+        ...prev,
+        cardName: selectedCard.cardName || prev.cardName,
+        cardNumber: selectedCard.number || prev.cardNumber,
+        expiryDate: selectedCard.expiryDate || prev.expiryDate,
+        cvv: '',
+      }));
+    }
+  }, [selectedCard]);
+
+  // when savedCards change, prompt selector if any exist
+  React.useEffect(() => {
+    if (savedCards && savedCards.length > 0) {
+      setChoosingCard(true);
+    }
+  }, [savedCards]);
 
   // keep cardName in sync if user logs in while on this screen
   React.useEffect(() => {
@@ -99,6 +154,14 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
       try {
         console.log('tarjeta procesada:', paymentData);
         await saveAppointment();
+        // guardar tarjeta si corresponde
+        if (addSavedCard) {
+          addSavedCard({
+            cardName: paymentData.cardName,
+            number: paymentData.cardNumber.replace(/\s/g, ''),
+            expiryDate: paymentData.expiryDate,
+          });
+        }
       } catch (error) {
         console.error('payment error:', error?.message || error);
         setErrors({ submit: error?.message || 'Error al procesar el pago. Intenta de nuevo.' });
@@ -107,11 +170,109 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
       }
     };
 
+    const handleConfirmSaved = async () => {
+      setLoading(true);
+      try {
+        await saveAppointment();
+      } catch (error) {
+        console.error('payment error:', error?.message || error);
+        setErrors({ submit: error?.message || 'Error al procesar el pago. Intenta de nuevo.' });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // selector de tarjetas guardadas
+    if (savedCards && savedCards.length > 0 && choosingCard) {
+      return (
+        <div className="max-w-md mx-auto pt-10">
+          <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-gray-100">
+            <h2 className="text-2xl font-bold mb-4">Selecciona un método de pago</h2>
+            <div className="space-y-4">
+              {savedCards.map((c, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setSelectedCard(c); setChoosingCard(false); }}
+                  className="w-full text-left bg-gray-50 p-4 rounded-2xl border border-gray-200 hover:bg-gray-100"
+                >
+                  Tarjeta terminada en {c.last4 || c.number.slice(-4)}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => { setSelectedCard(null); setChoosingCard(false); }}
+              className="mt-6 w-full bg-[#3D5645] text-white py-4 rounded-3xl font-bold uppercase text-[10px] tracking-widest"
+            >
+              Usar tarjeta nueva
+            </button>
+            <button
+              onClick={() => setStep('calendar')}
+              className="mt-3 w-full py-4 rounded-3xl font-bold uppercase text-[10px] tracking-widest border border-gray-200 text-gray-600"
+            >
+              Volver
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // si se seleccionó tarjeta guardada, mostrar confirmación simple
+    if (selectedCard) {
+      return (
+        <div className="max-w-md mx-auto pt-10">
+          <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-gray-100">
+            <h2 className="text-3xl font-black mb-2 italic tracking-tighter text-[#3D5645]">
+              Confirmar Pago
+            </h2>
+            {selectedDate && selectedTime && <ReservationInfo />}
+            <p className="mb-4">Usar tarjeta terminada en {selectedCard.last4 || selectedCard.number.slice(-4)}</p>
+            <div className="bg-gray-50 p-4 rounded-2xl mb-8">
+              <div className="space-y-2">
+                {cart.map(item => (
+                  <div key={item.id} className="flex justify-between text-sm">
+                    <span className="text-gray-600 font-medium">{item.name}</span>
+                    <span className="font-bold text-[#3D5645]">${item.price.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-gray-200 mt-4 pt-4 flex justify-between">
+                <span className="font-bold text-gray-900">Total</span>
+                <span className="text-2xl font-black text-[#3D5645]">${totalPrice.toFixed(2)}</span>
+              </div>
+            </div>
+            {errors.submit && <p className="text-red-500 text-sm text-center">{errors.submit}</p>}
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={() => setChoosingCard(true)}
+                className="flex-1 py-5 rounded-3xl font-bold shadow-xl uppercase text-[10px] tracking-widest border-2 border-gray-200 text-gray-600 hover:border-gray-300 transition-all"
+              >
+                Cambiar Tarjeta
+              </button>
+              <button
+                onClick={handleConfirmSaved}
+                disabled={loading}
+                className="flex-1 bg-[#3D5645] text-white py-5 rounded-3xl font-bold shadow-xl uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
+              >
+                {loading ? 'Procesando...' : 'Confirmar Pago'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // después del selector o si no hay tarjetas guardadas, mostramos el formulario normal
     return (
       <div className="max-w-md mx-auto pt-10">
         <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-gray-100">
-          <h2 className="text-3xl font-black mb-2 italic tracking-tighter text-[#3D5645]">Confirmar Pago</h2>
-          <p className="text-gray-500 text-sm mb-6">Completa los datos de tu tarjeta para confirmar la reserva</p>
+          <h2 className="text-3xl font-black mb-2 italic tracking-tighter text-[#3D5645]">
+            {reschedulingId ? 'Confirmar Pago (reprogramación)' : 'Confirmar Pago'}
+          </h2>
+          <p className="text-gray-500 text-sm mb-6">
+            Completa los datos de tu tarjeta para confirmar la reserva.
+            <br />
+            <strong className="text-xs">Cada servicio debe pagarse por separado, así que se te solicitará la información cada vez.</strong>
+          </p>
           {selectedDate && selectedTime && <ReservationInfo />}
 
           {/* Resumen de pago */}
@@ -201,14 +362,14 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
               <button
                 type="button"
                 onClick={() => setStep('calendar')}
-                className="flex-1 py-5 rounded-[1.5rem] font-bold shadow-xl uppercase text-[10px] tracking-widest border-2 border-gray-200 text-gray-600 hover:border-gray-300 transition-all"
+                className="flex-1 py-5 rounded-3xl font-bold shadow-xl uppercase text-[10px] tracking-widest border-2 border-gray-200 text-gray-600 hover:border-gray-300 transition-all"
               >
                 Volver
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-[#3D5645] text-white py-5 rounded-[1.5rem] font-bold shadow-xl uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
+                className="flex-1 bg-[#3D5645] text-white py-5 rounded-3xl font-bold shadow-xl uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
               >
                 {loading ? 'Procesando...' : 'Confirmar Pago'}
               </button>
@@ -267,7 +428,7 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
       await handleAuth('login', loginData, { skipSave: true });
       // once logged in, show the payment form
       setShowPayment(true);
-    } catch (error) {
+    } catch {
       // Error handled by handleAuth
     }
     setLoading(false);
@@ -303,7 +464,7 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
     try {
       // Mostrar formulario de pago - se completará el registro después del pago
       setShowPayment(true);
-    } catch (error) {
+    } catch {
       // Error silencioso
     }
     setLoading(false);
@@ -334,6 +495,14 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
       console.log('tarjeta mock procesada:', paymentData);
       // Crear la cuenta del usuario (handleAuth crea la cita automáticamente después)
       await handleAuth('signup', signupData);
+      // si el usuario quedó logueado a estas alturas, guarda la tarjeta también
+      if (addSavedCard) {
+        addSavedCard({
+          cardName: paymentData.cardName,
+          number: paymentData.cardNumber.replace(/\s/g, ''),
+          expiryDate: paymentData.expiryDate,
+        });
+      }
     } catch (error) {
       console.error('signup/payment error:', error?.message || error);
       setErrors({ submit: error?.message || 'Error al completar el registro y pago. Intenta de nuevo.' });
@@ -348,8 +517,15 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
     return (
       <div className="max-w-md mx-auto pt-10">
         <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-gray-100">
-          <h2 className="text-3xl font-black mb-2 italic tracking-tighter text-[#3D5645]">Información de Pago</h2>
-          <p className="text-gray-500 text-sm mb-2">A continuación ingresa tus datos para completar la reserva</p>
+          <h2 className="text-3xl font-black mb-2 italic tracking-tighter text-[#3D5645]">
+            Información de Pago
+            {reschedulingId ? ' (reprogramación)' : ''}
+          </h2>
+          <p className="text-gray-500 text-sm mb-2">
+            A continuación ingresa tus datos para completar la reserva.
+            <br />
+            <strong className="text-xs">Cada servicio debe pagarse por separado, así que se te solicitará la información cada vez.</strong>
+          </p>
           {selectedDate && selectedTime && <ReservationInfo />}
 
           {/* Resumen de pago (nuevo usuario) */}
@@ -441,7 +617,7 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#3D5645] text-white py-5 rounded-[1.5rem] font-bold shadow-xl mt-6 uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
+              className="w-full bg-[#3D5645] text-white py-5 rounded-3xl font-bold shadow-xl mt-6 uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
             >
               {loading ? 'Procesando...' : 'Completar Pago'}
             </button>
@@ -534,7 +710,7 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#3D5645] text-white py-5 rounded-[1.5rem] font-bold shadow-xl mt-6 uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
+              className="w-full bg-[#3D5645] text-white py-5 rounded-3xl font-bold shadow-xl mt-6 uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
             >
               {loading ? 'Ingresando...' : 'Ingresar y Agendar'}
             </button>
@@ -639,7 +815,7 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#3D5645] text-white py-5 rounded-[1.5rem] font-bold shadow-xl mt-6 uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
+              className="w-full bg-[#3D5645] text-white py-5 rounded-3xl font-bold shadow-xl mt-6 uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
             >
               {loading ? 'Registrando...' : 'Crear Cuenta'}
             </button>

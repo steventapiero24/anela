@@ -12,7 +12,6 @@ import NavBar from './NavBar';
 
 // supabase helpers
 import {
-  supabase,
   signIn,
   signUp,
   signOut,
@@ -35,6 +34,26 @@ const App = () => {
   const [user, setUser] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [reschedulingId, setReschedulingId] = useState(null);
+
+  // tarjetas guardadas (por usuario)
+  const [savedCards, setSavedCards] = useState([]);
+
+  useEffect(() => {
+    if (user && user.id) {
+      const stored = localStorage.getItem(`cards_${user.id}`);
+      if (stored) setSavedCards(JSON.parse(stored));
+    }
+  }, [user]);
+
+  const addSavedCard = (card) => {
+    if (!user || !user.id) return;
+    // solo almacenar si no existe una tarjeta con los mismos 4 últimos
+    const last4 = card.number.slice(-4);
+    if (savedCards.find(c => c.last4 === last4)) return;
+    const newList = [...savedCards, { ...card, last4 }];
+    setSavedCards(newList);
+    localStorage.setItem(`cards_${user.id}`, JSON.stringify(newList));
+  };
   
   // Estado para edición de perfil
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -287,6 +306,9 @@ const App = () => {
             setStep={setStep}
             selectedDate={selectedDate}
             selectedTime={selectedTime}
+            reschedulingId={reschedulingId}
+            savedCards={savedCards}
+            addSavedCard={addSavedCard}
           />
         )}
 

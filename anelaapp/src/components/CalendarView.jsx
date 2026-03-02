@@ -57,10 +57,17 @@ const CalendarView = ({ setStep, cart, removeFromCart, CATEGORIES, selectedDate,
        <div className="flex flex-col gap-3 mt-10">
          <button 
            disabled={!selectedDate || !selectedTime}
-           onClick={() => reschedulingId ? saveAppointment() : setStep('payment')}
-           className="w-full bg-[#3D5645] text-white py-5 rounded-[1.5rem] font-bold shadow-xl shadow-[#3D5645]/20 disabled:opacity-30 uppercase tracking-widest text-[10px] transition-all hover:scale-[1.02] active:scale-95"
+           onClick={() => {
+             if (reschedulingId) {
+               // directly save updated date/time without going through payment
+               saveAppointment();
+             } else {
+               setStep('payment');
+             }
+           }}
+           className="w-full bg-[#3D5645] text-white py-5 rounded-3xl font-bold shadow-xl shadow-[#3D5645]/20 disabled:opacity-30 uppercase tracking-widest text-[10px] transition-all hover:scale-[1.02] active:scale-95"
          >
-           {reschedulingId ? "Confirmar Cambio" : "Ir a Pago"}
+           {reschedulingId ? 'Guardar cambios' : 'Ir a Pago'}
          </button>
        </div>
     </div>
