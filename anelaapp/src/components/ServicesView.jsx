@@ -11,7 +11,7 @@ const ServicesView = ({ setStep, selectedCategory, SERVICES, cart, addToCart }) 
       {SERVICES.filter(s => !selectedCategory || s.category === selectedCategory?.id).map(s => (
         <div key={s.id} className="bg-white p-4 rounded-[2rem] shadow-sm flex items-center gap-4 border border-gray-50">
           <div className="w-20 h-20 bg-gray-100 rounded-2xl overflow-hidden">
-            <img src={`https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=150&id=${s.id}`} className="w-full h-full object-cover" alt={s.name} />
+            <img src={s.image} className="w-full h-full object-cover" alt={s.name} />
           </div>
           <div className="flex-1">
             <h4 className="font-bold text-sm">{s.name}</h4>

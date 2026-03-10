@@ -98,17 +98,37 @@ const App = () => {
 
   // --- DATOS MOCK ---
   const CATEGORIES = [
-    { id: 'hair', name: 'Cuidado Capilar', icon: <Scissors size={24} />, bg: 'bg-[#E8F0EA]' },
-    { id: 'nails', name: 'Manicura', icon: <Sparkles size={24} />, bg: 'bg-[#F2E8E8]' },
-    { id: 'spa', name: 'Masajes', icon: <Flower2 size={24} />, bg: 'bg-[#E8EEF2]' },
-    { id: 'facial', name: 'Skin Care', icon: <Zap size={24} />, bg: 'bg-[#F2F2E8]' },
+    { id: 'manicura', name: 'Manicuras', icon: <Sparkles size={24} />, bg: 'bg-[#F2E8E8]' },
+    { id: 'acrilico', name: ' Acrilico softgel', icon: <Scissors size={24} />, bg: 'bg-[#E8F0EA]' },
+    { id: 'pedicuras', name: ' Pedicuras', icon: <Scissors size={24} />, bg: 'bg-[#E8F0EA]' },
+    { id: 'suplementos', name: 'Suplementos', icon: <Zap size={24} />, bg: 'bg-[#F2F2E8]' },
+    { id: 'otros', name: 'Otros', icon: <Flower2 size={24} />, bg: 'bg-[#E8EEF2]' },
   ];
 
   const SERVICES = [
-    { id: 1, category: 'hair', name: "Corte SilkSculpt", price: 45.00, rating: 4.9, time: '45 min', recommended: true },
-    { id: 2, category: 'hair', name: "Tinte Botánico", price: 85.00, rating: 4.8, time: '120 min', recommended: false },
-    { id: 3, category: 'facial', name: "Limpieza Profunda", price: 60.00, rating: 5.0, time: '60 min', recommended: true },
-    { id: 4, category: 'spa', name: "Aromaterapia", price: 75.00, rating: 4.7, time: '90 min', recommended: true },
+    { id: 1, category: 'manicura', name: "Manicura sin pintar", price: 10.00, rating: 4.9, time: '20 min', recommended: false, image: "./src/assets/images/sin-esmalte.jpeg" },
+    { id: 2, category: 'manicura', name: "Manicura con esmaltado tradicional", price: 15.00, rating: 4.9, time: '30 min', recommended: false, image: "./src/assets/images/tradicional.jpeg" },
+    { id: 3, category: 'manicura', name: "Manicura semipermanente ", price: 20.00, rating: 4.9, time: '45 min', recommended: false, image: "./src/assets/images/semipermanente.jpeg" },
+    { id: 4, category: 'manicura', name: "Manicura semipermanente express", price: 15.00, rating: 4.9, time: '30 min ', recommended: false, image: "./src/assets/images/semiexpress.jpeg" },
+    { id: 5, category: 'manicura', name: "Manicura con base protein", price: 25.00, rating: 4.9, time: '1 hora', recommended: true, image: "./src/assets/images/base-protein.jpeg" },
+    { id: 6, category: 'acrilico', name: "Sencillo unicolor largo 2/3", price: 28.00, rating: 4.8, time: '1 hora 30 min', recommended: true, image: "./src/assets/images/acrilico-unicolor.jpeg" },
+    { id: 7, category: 'acrilico', name: "Con diseño largo 2/3", price: 30.00, rating: 4.8, time: '1 hora y 45 min', recommended: false, image: "./src/assets/images/acril-largo.jpeg" },
+    { id: 8, category: 'acrilico', name: "Elaborados largo 2/3/4", price: 35.00, rating: 4.8, time: '2 horas', recommended: false, image: "./src/assets/images/largo-diseño.jpeg" },
+    { id: 9, category: 'acrilico', name: "Extra elaborados Diseño largo 4/5/6", price: 45.00, rating: 4.8, time: '2 horas y 30 min', recommended: false, image: "./src/assets/images/extra-elaborado.jpeg" },
+    { id: 10, category: 'pedicuras', name: "Pedicura basica tradicional", price: 25.00, rating: 5.0, time: '1 hora', recommended: false, image: "./src/assets/images/base-protein.jpeg" },
+    { id: 11, category: 'pedicuras', name: "Pedicura semipermanente", price: 30.00, rating: 5.0, time: 'una hora y 15 min', recommended: false, image: "./src/assets/images/base-protein.jpeg" },
+    { id: 12, category: 'pedicuras', name: "Pedicura express(semipermanente)", price: 20.00, rating: 5.0, time: '40 min', recommended: false, image: "./src/assets/images/base-protein.jpeg" },
+    { id: 13, category: 'pedicuras', name: "Pedicura tecnica", price: 45.00, rating: 5.0, time: '1 hora y 45 min', recommended: false, image: "./src/assets/images/base-protein.jpeg" },
+    { id: 14, category: 'suplementos', name: "Frances", price: 5.00, rating: 4.7, time: '10 min', recommended: false, image: "./src/assets/images/frances.jpeg" },
+    { id: 15, category: 'suplementos', name: "Efecto aurora", price: 5.00, rating: 4.7, time: '10 min', recommended: false, image: "./src/assets/images/aurora.jpeg" },
+    { id: 16, category: 'suplementos', name: "Relieves", price: 5.00, rating: 4.7, time: '10 min', recommended: false, image: "./src/assets/images/relieve.jpeg" },
+    { id: 17, category: 'suplementos', name: "Babyboomer", price: 5.00, rating: 4.7, time: '10 min', recommended: false, image: "./src/assets/images/base-protein.jpeg" },
+    { id: 18, category: 'suplementos', name: "Flores 3D", price: 5.00, rating: 4.7, time: '10 min', recommended: false, image: "./src/assets/images/flores.jpeg" },
+    { id: 19, category: 'suplementos', name: "Cristales", price: 5.00, rating: 4.7, time: '10 min', recommended: false, image: "./src/assets/images/cristales.jpeg" },
+    { id: 20, category: 'otros', name: "Retiro semipermanente", price: 5.00, rating: 4.7, time: '15 min', recommended: false, image: "./src/assets/images/base-protein.jpeg" },
+    { id: 21, category: 'otros', name: "Retiro por mantenimiento", price: 5.00, rating: 4.7, time: '15 min', recommended: false, image: "./src/assets/images/base-protein.jpeg" },
+    { id: 22, category: 'otros', name: "Reparacion de uña", price: 3.00, rating: 4.7, time: '15 min', recommended: false, image: "./src/assets/images/base-protein.jpeg" },
+    { id: 23, category: 'otros', name: "Manos y pies semipermanente", price: 45.00, rating: 4.7, time: '2 horas 15 min', recommended: true, image: "./src/assets/images/base-protein.jpeg" },
   ];
 
   const AVATARS = [
