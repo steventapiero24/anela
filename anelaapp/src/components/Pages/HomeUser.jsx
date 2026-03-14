@@ -119,7 +119,7 @@ const HomeView = ({
           {services.filter(s => s.recommended).map(s => (
             <div key={s.id} className="min-w-[200px] bg-white rounded-[2rem] p-4 shadow-sm border border-gray-50 space-y-3">
               <div className="relative">
-                 <img src={`https://images.unsplash.com/photo-1560750588-73207b1ef5b8?auto=format&fit=crop&q=80&w=200&id=${s.id}`} className="w-full h-32 object-cover rounded-2xl" alt={s.name} />
+                 <img src={s.image} className="w-full h-32 object-cover rounded-2xl" alt={s.name} />
                  <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg text-[9px] font-bold text-[#3D5645]">★ {s.rating}</span>
               </div>
               <div>

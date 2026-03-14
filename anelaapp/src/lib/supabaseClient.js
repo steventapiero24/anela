@@ -1,15 +1,37 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // Check if Supabase credentials are properly configured
+// Must have valid URL and a real API key (should start with eyJ...)
 export const isSupabaseConfigured = () => {
-  return supabaseUrl && supabaseUrl !== '' && supabaseAnonKey && supabaseAnonKey !== ''
+  const hasUrl = supabaseUrl && supabaseUrl.trim() !== '' && supabaseUrl.includes('supabase.co')
+  const hasValidKey = supabaseAnonKey && supabaseAnonKey.trim() !== '' && supabaseAnonKey.startsWith('eyJ')
+  const isConfigured = hasUrl && hasValidKey
+  
+  if (!isConfigured) {
+    console.log('[SUPABASE] Not configured. Using mock mode.');
+    console.log('  - URL:', hasUrl ? '✓' : '✗')
+    console.log('  - Key:', hasValidKey ? '✓' : '✗')
+  }
+  
+  return isConfigured
 }
 
 export const supabase = isSupabaseConfigured() 
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storage: {
+          getItem: (key) => localStorage.getItem(key),
+          setItem: (key, value) => localStorage.setItem(key, value),
+          removeItem: (key) => localStorage.removeItem(key),
+        },
+      },
+    })
   : null
 
 // Import mock helpers for fallback
@@ -177,12 +199,59 @@ export const getCurrentSession = async () => {
     return mockGetCurrentSession()
   }
   try {
+    // Primero obtiene la sesión actual
     const {
       data: { session },
     } = await supabase.auth.getSession()
+    
+    // Si hay una sesión válida, intenta refrescar el token
+    if (session) {
+      await supabase.auth.refreshSession()
+    }
+    
     return session?.user || null
   } catch (err) {
     console.warn('getCurrentSession supabase error', err)
+    return null
+  }
+}
+
+// Nueva función para esperar a que Supabase esté listo e hidrate la sesión
+export const initializeSession = async () => {
+  if (!isSupabaseConfigured()) {
+    console.log('[SESSION] Using mock session');
+    return mockGetCurrentSession()
+  }
+  
+  try {
+    console.log('[SESSION] Initializing Supabase session...');
+    
+    // Espera un poco para que Supabase cargue la sesión desde localStorage
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    
+    console.log('[SESSION] Got session:', session?.user?.id ? 'YES' : 'NO');
+    
+    if (session?.user) {
+      // Refrescar token si existe
+      try {
+        await supabase.auth.refreshSession()
+        console.log('[SESSION] Token refreshed');
+      } catch (e) {
+        console.warn('[SESSION] Token refresh failed:', e)
+      }
+    }
+    
+    // Log localStorage state
+    const keys = Object.keys(localStorage);
+    console.log('[SESSION] localStorage keys:', keys.filter(k => k.includes('auth') || k.includes('anela')));
+    
+    return session?.user || null
+  } catch (err) {
+    console.warn('[SESSION] initializeSession error', err)
     return null
   }
 }

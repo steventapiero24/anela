@@ -22,6 +22,8 @@ import {
   updateAppointment as dbUpdateAppointment,
   deleteAppointment as dbDeleteAppointment,
   getCurrentSession,
+  initializeSession,
+  supabase,
 } from '../lib/supabaseClient';
 
 const App = () => {
@@ -64,36 +66,98 @@ const App = () => {
     avatar: ""
   });
 
-  // persistencia de sesion
+  // persistencia de sesion con listener de Supabase
   useEffect(() => {
-    const init = async () => {
+    let unsubscribe = null;
+    let mounted = true;
+    console.log('[AGENDA] Mount - initializing session');
+
+    // Función para cargar datos del usuario
+    const loadUserData = async (userId) => {
+      if (!mounted) return;
       try {
-        const sessionUser = await getCurrentSession();
-        if (sessionUser) {
-          // sessionUser may be full profile or just user object
-          const id = sessionUser.id || sessionUser.user?.id || sessionUser.uid;
-          const profile = await getUserProfile(id);
-          const userObj = profile || sessionUser;
-          setUser(userObj);
-          setEditForm({
-            full_name: userObj.full_name || '',
-            email: userObj.email || sessionUser.email || '',
-            phone: userObj.phone || '',
-            avatar: userObj.avatar || AVATARS[1],
-          });
-          const appts = await fetchAppointments(id);
-          setAppointments(appts || []);
-        }
+        console.log('[AGENDA] Loading user data for:', userId);
+        const profile = await getUserProfile(userId);
+        console.log('[AGENDA] Profile loaded:', profile?.id);
+        if (mounted) setUser(profile);
+        if (mounted) setEditForm({
+          full_name: profile?.full_name || '',
+          email: profile?.email || '',
+          phone: profile?.phone || '',
+          avatar: profile?.avatar || AVATARS[1],
+        });
+        const appts = await fetchAppointments(userId);
+        console.log('[AGENDA] Appointments loaded:', appts?.length);
+        if (mounted) setAppointments(appts || []);
       } catch (err) {
-        console.error('init session error', err);
+        console.error('[AGENDA] loadUserData error:', err);
       }
     };
-    init();
 
-    // we don't need to listen for auth state changes here;
-    // session persistence is handled by getCurrentSession on mount.
-    // returning noop cleanup
-    return () => {}
+    // Setup listener de autenticación
+    if (supabase?.auth?.onAuthStateChange) {
+      console.log('[AGENDA] Setting up auth state listener');
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          console.log('[AGENDA] Auth state changed:', event, '- User:', session?.user?.id || 'NONE');
+          
+          if (!mounted) return;
+          
+          if (event === 'SIGNED_OUT' || !session?.user) {
+            console.log('[AGENDA] User signed out');
+            setUser(null);
+            setAppointments([]);
+            setEditForm({
+              full_name: '',
+              email: '',
+              phone: '',
+              avatar: AVATARS[1],
+            });
+          } else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+            const userId = session.user?.id;
+            console.log('[AGENDA] Auth event:', event, 'userId:', userId);
+            if (userId) {
+              await loadUserData(userId);
+            }
+          }
+        }
+      );
+      unsubscribe = subscription?.unsubscribe;
+      
+      // IMPORTANTE: También cargar la sesión actual inmediatamente después de setup
+      // No confiar solo en que el listener dispare INITIAL_SESSION
+      setTimeout(async () => {
+        if (!mounted) return;
+        console.log('[AGENDA] Checking for existing session...');
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          console.log('[AGENDA] Session check result:', session?.user?.id ? 'YES' : 'NO');
+          if (session?.user?.id && mounted) {
+            console.log('[AGENDA] Found existing session, loading user');
+            await loadUserData(session.user.id);
+          }
+        } catch (err) {
+          console.error('[AGENDA] Session check error:', err);
+        }
+      }, 50);
+    } else {
+      // Fallback: cargar sesión manualmente si no está Supabase
+      console.log('[AGENDA] No Supabase listener, using fallback');
+      (async () => {
+        const sessionUser = await initializeSession();
+        console.log('[AGENDA] Fallback session:', sessionUser?.id || 'NONE');
+        if (sessionUser && mounted) {
+          const userId = sessionUser.id || sessionUser.user?.id || sessionUser.uid;
+          await loadUserData(userId);
+        }
+      })();
+    }
+
+    return () => {
+      console.log('[AGENDA] Cleanup');
+      mounted = false;
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   // --- DATOS MOCK ---

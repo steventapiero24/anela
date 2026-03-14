@@ -13,6 +13,7 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [showPayment, setShowPayment] = useState(false);
+  const [justRegistered, setJustRegistered] = useState(false);
 
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [signupData, setSignupData] = useState({
@@ -24,9 +25,17 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
     confirmPassword: '',
   });
 
+  // Si el usuario ya está logueado, mostrar directamente el pago
   useEffect(() => {
-    setShowPayment(false);
-  }, [user]);
+    if (user && user.id && justRegistered) {
+      // Usuario se acaba de registrar o loguear, iniciar pago automáticamente
+      setJustRegistered(false);
+      setShowPayment(true);
+    } else if (user && user.id) {
+      // Usuario estaba logueado, no mostrar placeholder
+      setShowPayment(false);
+    }
+  }, [user, justRegistered]);
 
   const launchStripeCheckout = useCallback(async () => {
     if (!cart || cart.length === 0) return;
@@ -93,7 +102,7 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
       <div className="max-w-md mx-auto pt-10">
         <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-gray-100 text-center">
           <h2 className="text-3xl font-black mb-4 italic tracking-tighter text-[#3D5645]">
-            {reschedulingId ? 'Pagar reprogramación' : 'Pago con Stripe'}
+            {reschedulingId ? 'Pagar reprogramación' : 'Resumen de tu orden'}
           </h2>
           {selectedDate && selectedTime && <ReservationInfo date={selectedDate} time={selectedTime} />}
           <div className="bg-gray-50 p-4 rounded-2xl mb-8">
@@ -131,12 +140,14 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
     );
   }
 
-  // placeholder mientras redirige
-  if (showPayment) {
+  // placeholder mientras se procesa el login/registro
+  if (showPayment && !user) {
     return (
       <div className="max-w-md mx-auto pt-10">
         <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-gray-100 text-center">
-          <p className="text-gray-700">Redirigiendo a Stripe para procesar tu pago...</p>
+          <div className="animate-spin h-12 w-12 border-4 border-[#3D5645] border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-700 font-medium">Completando tu registro...</p>
+          <p className="text-gray-400 text-sm mt-2">Redirigiendo al pago en un momento</p>
         </div>
       </div>
     );
@@ -171,8 +182,11 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
     setLoading(true);
     try {
       await handleAuth('login', loginData, { skipSave: true });
-      setShowPayment(true);
-    } catch {};
+      setJustRegistered(true);
+    } catch (err) {
+      console.error('login error', err);
+      setErrors({ submit: err.message || 'Error al ingresar' });
+    }
     setLoading(false);
   };
 
@@ -193,7 +207,13 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
       return;
     }
     setLoading(true);
-    setShowPayment(true);
+    try {
+      await handleAuth('signup', signupData, { skipSave: true });
+      setJustRegistered(true);
+    } catch (err) {
+      console.error('signup error', err);
+      setErrors({ submit: err.message || 'Error al registrar' });
+    }
     setLoading(false);
   };
 
