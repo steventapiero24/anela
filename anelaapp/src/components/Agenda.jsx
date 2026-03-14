@@ -8,6 +8,7 @@ import CalendarView from './CalendarView';
 import PaymentView from './PaymentView';
 import ConfirmationView from './ConfirmationView';
 import ProfileView from './ProfileView';
+import AdminView from './AdminView';
 import NavBar from './NavBar';
 
 // supabase helpers
@@ -18,10 +19,10 @@ import {
   getUserProfile,
   upsertProfile,
   fetchAppointments,
+  fetchAllAppointments,
   addAppointment as dbAddAppointment,
   updateAppointment as dbUpdateAppointment,
   deleteAppointment as dbDeleteAppointment,
-  getCurrentSession,
   initializeSession,
   supabase,
 } from '../lib/supabaseClient';
@@ -35,6 +36,7 @@ const App = () => {
   const [selectedTime, setSelectedTime] = useState(null);
   const [user, setUser] = useState(null);
   const [appointments, setAppointments] = useState([]);
+  const [adminAppointments, setAdminAppointments] = useState([]);
   const [reschedulingId, setReschedulingId] = useState(null);
 
   // tarjetas guardadas (por usuario)
@@ -89,6 +91,10 @@ const App = () => {
         const appts = await fetchAppointments(userId);
         console.log('[AGENDA] Appointments loaded:', appts?.length);
         if (mounted) setAppointments(appts || []);
+
+        // Si el usuario es admin, abrir directamente el panel de administración
+        const isAdmin = profile?.is_admin || profile?.email === 'admin@anela.com';
+        if (mounted && isAdmin) setStep('admin');
       } catch (err) {
         console.error('[AGENDA] loadUserData error:', err);
       }
@@ -160,13 +166,31 @@ const App = () => {
     };
   }, []);
 
+  // --- ADMIN DATA (solo para administradores) ---
+  useEffect(() => {
+    const loadAdminAppointments = async () => {
+      if (!user) return;
+      const isAdmin = user?.is_admin || user?.email === 'admin@anela.com';
+      if (!isAdmin) return;
+
+      try {
+        const allAppts = await fetchAllAppointments();
+        setAdminAppointments(allAppts || []);
+      } catch (err) {
+        console.error('[AGENDA] loadAdminAppointments error', err);
+      }
+    };
+
+    loadAdminAppointments();
+  }, [user]);
+
   // --- DATOS MOCK ---
   const CATEGORIES = [
-    { id: 'manicura', name: 'Manicuras', icon: <Sparkles size={24} />, bg: 'bg-[#F2E8E8]' },
-    { id: 'acrilico', name: ' Acrilico softgel', icon: <Scissors size={24} />, bg: 'bg-[#E8F0EA]' },
-    { id: 'pedicuras', name: ' Pedicuras', icon: <Scissors size={24} />, bg: 'bg-[#E8F0EA]' },
-    { id: 'suplementos', name: 'Suplementos', icon: <Zap size={24} />, bg: 'bg-[#F2F2E8]' },
-    { id: 'otros', name: 'Otros', icon: <Flower2 size={24} />, bg: 'bg-[#E8EEF2]' },
+    { id: 'manicura', name: 'Manicuras', icon: <Sparkles size={24} />, bg: 'bg-secondary/20' },
+    { id: 'acrilico', name: ' Acrilico softgel', icon: <Scissors size={24} />, bg: 'bg-primary-light' },
+    { id: 'pedicuras', name: ' Pedicuras', icon: <Scissors size={24} />, bg: 'bg-primary-light' },
+    { id: 'suplementos', name: 'Suplementos', icon: <Zap size={24} />, bg: 'bg-secondary/20' },
+    { id: 'otros', name: 'Otros', icon: <Flower2 size={24} />, bg: 'bg-secondary/20' },
   ];
 
   const SERVICES = [
@@ -260,8 +284,12 @@ const App = () => {
       const appts = await fetchAppointments(authUser.id);
       setAppointments(appts || []);
 
+      // Si el usuario es admin, abrir panel admin en lugar de home
+      const isAdmin = userObj?.is_admin || userObj?.email === 'admin@anela.com';
+      const defaultStep = isAdmin ? 'admin' : 'home';
+
       if (cart.length > 0 && !options.skipSave) await saveAppointment(authUser.id);
-      else if (cart.length === 0) setStep('home');
+      else if (cart.length === 0) setStep(defaultStep);
     } catch (err) {
       console.error('auth error:', err.message || err);
       throw err;
@@ -284,6 +312,7 @@ const App = () => {
             : appt
         ));
         setReschedulingId(null);
+        await refreshAdminAppointments();
       } catch (err) {
         console.error('update appt error', err);
       }
@@ -294,11 +323,12 @@ const App = () => {
         date: selectedDate || "24 Feb",
         time: selectedTime || "10:00 AM",
         status: "Confirmado",
-        timestamp: new Date().toLocaleDateString()
+        timestamp: new Date().toISOString()
       };
       try {
         const inserted = await dbAddAppointment(payload);
         setAppointments([inserted, ...appointments]);
+        await refreshAdminAppointments();
       } catch (err) {
         console.error('add appt error', err);
       }
@@ -312,10 +342,36 @@ const App = () => {
 
   const cancelAppointment = async (id) => {
     setAppointments(appointments.filter(a => a.id !== id));
+    setAdminAppointments(adminAppointments.filter(a => a.id !== id));
     try {
       await dbDeleteAppointment(id);
+      await refreshAdminAppointments();
     } catch (err) {
       console.error('delete appt error', err);
+    }
+  };
+
+  const refreshAdminAppointments = async () => {
+    const isAdmin = user?.is_admin || user?.email === 'admin@anela.com';
+    if (!isAdmin) return;
+    try {
+      const allAppts = await fetchAllAppointments();
+      setAdminAppointments(allAppts || []);
+    } catch (err) {
+      console.error('[AGENDA] refreshAdminAppointments error', err);
+    }
+  };
+
+  const togglePaidStatus = async (appt) => {
+    const isPaid = (appt.paid ?? (appt.status?.toLowerCase().includes('confirm') || appt.status?.toLowerCase().includes('pagado')));
+    const newStatus = isPaid ? 'Pendiente' : 'Confirmado';
+
+    try {
+      const updated = await dbUpdateAppointment(appt.id, { status: newStatus });
+      setAppointments(appointments.map(a => (a.id === appt.id ? updated : a)));
+      setAdminAppointments(adminAppointments.map(a => (a.id === appt.id ? updated : a)));
+    } catch (err) {
+      console.error('[AGENDA] togglePaidStatus error', err);
     }
   };
 
@@ -355,30 +411,33 @@ const App = () => {
     setStep('home');
     setIsEditingProfile(false);
     setAppointments([]);
+    setAdminAppointments([]);
     setCart([]);
     setSelectedDate(null);
     setSelectedTime(null);
   };
 
+  const isAdmin = user?.is_admin || user?.email === 'admin@anela.com';
+
   return (
-    <div className="min-h-screen bg-[#F4F4F4] text-[#1A1A1A] font-sans pb-28">
+    <div className="min-h-screen bg-bg-default text-text-dark font-sans pb-28">
       
       {/* HEADER */}
       {step !== 'profile' && <Header cart={cart} appointments={appointments} setStep={setStep} />}
 
       {/* BOTÓN FLOTANTE "IR A RESERVAR" SI HAY CARRITO */}
-      <FloatingButton cart={cart} setStep={setStep} />
+      {!isAdmin && <FloatingButton cart={cart} setStep={setStep} />}
 
       <main className={`px-6 space-y-8 animate-in ${step === 'profile' ? 'pt-16' : ''}`}>
         
         {/* HOME VIEW */}
-        {step === 'home' && <HomeView appointments={appointments} setStep={setStep} CATEGORIES={CATEGORIES} SERVICES={SERVICES} cart={cart} addToCart={addToCart} startReschedule={startReschedule} cancelAppointment={cancelAppointment} setSelectedCategory={setSelectedCategory} />}
+        {step === 'home' && !isAdmin && <HomeView appointments={appointments} setStep={setStep} CATEGORIES={CATEGORIES} SERVICES={SERVICES} cart={cart} addToCart={addToCart} startReschedule={startReschedule} cancelAppointment={cancelAppointment} setSelectedCategory={setSelectedCategory} />}
 
         {/* SERVICES VIEW */}
-        {step === 'services' && <ServicesView setStep={setStep} selectedCategory={selectedCategory} SERVICES={SERVICES} cart={cart} addToCart={addToCart} />}
+        {!isAdmin && step === 'services' && <ServicesView setStep={setStep} selectedCategory={selectedCategory} SERVICES={SERVICES} cart={cart} addToCart={addToCart} />}
 
         {/* CALENDAR VIEW */}
-        {step === 'calendar' && <CalendarView setStep={setStep} cart={cart} removeFromCart={removeFromCart} CATEGORIES={CATEGORIES} selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTime={selectedTime} setSelectedTime={setSelectedTime} user={user} saveAppointment={saveAppointment} reschedulingId={reschedulingId} />}
+        {!isAdmin && step === 'calendar' && <CalendarView setStep={setStep} cart={cart} removeFromCart={removeFromCart} CATEGORIES={CATEGORIES} selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTime={selectedTime} setSelectedTime={setSelectedTime} user={user} saveAppointment={saveAppointment} reschedulingId={reschedulingId} />}
 
         {/* AUTH VIEW */}
         {step === 'payment' && (
@@ -399,13 +458,24 @@ const App = () => {
         {/* CONFIRMATION VIEW */}
         {step === 'confirmation' && <ConfirmationView setStep={setStep} />}
 
+        {/* ADMIN VIEW */}
+        {step === 'admin' && isAdmin && (
+          <AdminView
+            appointments={adminAppointments}
+            setStep={setStep}
+            startReschedule={startReschedule}
+            cancelAppointment={cancelAppointment}
+            togglePaidStatus={togglePaidStatus}
+          />
+        )}
+
         {/* PROFILE VIEW */}
         {step === 'profile' && user && <ProfileView user={user} setUser={setUser} setStep={setStep} isEditingProfile={isEditingProfile} setIsEditingProfile={setIsEditingProfile} editForm={editForm} setEditForm={setEditForm} handleSaveProfile={handleSaveProfile} appointments={appointments} startReschedule={startReschedule} cancelAppointment={cancelAppointment} AVATARS={AVATARS} handleLogout={handleLogout} />}
 
       </main>
 
       {/* NAV BAR FLOTANTE */}
-      <NavBar step={step} setStep={setStep} user={user} setSelectedCategory={setSelectedCategory} />
+      <NavBar step={step} setStep={setStep} user={user} isAdmin={isAdmin} setSelectedCategory={setSelectedCategory} />
     </div>
   );
 };

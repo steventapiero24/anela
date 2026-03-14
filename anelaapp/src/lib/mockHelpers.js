@@ -83,6 +83,10 @@ export const mockFetchAppointments = async (userId) => {
   return appointmentsDB.filter(a => a.user_id === userId)
 }
 
+export const mockFetchAllAppointments = async () => {
+  return appointmentsDB
+}
+
 export const mockAddAppointment = async (appt) => {
   const newAppt = {
     id: Math.random().toString(36).substr(2, 9),

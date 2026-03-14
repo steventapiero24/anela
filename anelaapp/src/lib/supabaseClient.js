@@ -42,6 +42,7 @@ import {
   mockGetUserProfile,
   mockUpsertProfile,
   mockFetchAppointments,
+  mockFetchAllAppointments,
   mockAddAppointment,
   mockUpdateAppointment,
   mockDeleteAppointment,
@@ -132,7 +133,7 @@ export const fetchAppointments = async (userId) => {
   try {
     const { data, error } = await supabase
       .from('appointments')
-      .select('*')
+      .select('*, profiles(*)')
       .eq('user_id', userId)
       .order('timestamp', { ascending: false })
     if (error) throw error
@@ -140,6 +141,23 @@ export const fetchAppointments = async (userId) => {
   } catch (err) {
     console.warn('supabase fetchAppointments failed, falling back to mock:', err.message)
     return mockFetchAppointments(userId)
+  }
+}
+
+export const fetchAllAppointments = async () => {
+  if (!isSupabaseConfigured()) {
+    return mockFetchAllAppointments()
+  }
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*, profiles(*)')
+      .order('timestamp', { ascending: false })
+    if (error) throw error
+    return data
+  } catch (err) {
+    console.warn('supabase fetchAllAppointments failed, falling back to mock:', err.message)
+    return mockFetchAllAppointments()
   }
 }
 
