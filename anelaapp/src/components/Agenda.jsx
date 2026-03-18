@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Scissors, Sparkles, Flower2, Zap } from 'lucide-react';
-import Header from './Header';
+import Header from './Layouts/Header';
 import FloatingButton from './FloatingButton';
 import HomeView from './HomeView';
 import ServicesView from './ServicesView';
@@ -185,15 +185,15 @@ const App = () => {
   }, [user]);
 
   // --- DATOS MOCK ---
-  const CATEGORIES = [
+  const CATEGORIES = useMemo(() => [
     { id: 'manicura', name: 'Manicuras', icon: <Sparkles size={24} />, bg: 'bg-secondary/20' },
     { id: 'acrilico', name: ' Acrilico softgel', icon: <Scissors size={24} />, bg: 'bg-primary-light' },
     { id: 'pedicuras', name: ' Pedicuras', icon: <Scissors size={24} />, bg: 'bg-primary-light' },
     { id: 'suplementos', name: 'Suplementos', icon: <Zap size={24} />, bg: 'bg-secondary/20' },
     { id: 'otros', name: 'Otros', icon: <Flower2 size={24} />, bg: 'bg-secondary/20' },
-  ];
+  ], []);
 
-  const SERVICES = [
+  const SERVICES = useMemo(() => [
     { id: 1, category: 'manicura', name: "Manicura sin pintar", price: 10.00, rating: 4.9, time: '20 min', recommended: false, image: "./src/assets/images/sin-esmalte.jpeg" },
     { id: 2, category: 'manicura', name: "Manicura con esmaltado tradicional", price: 15.00, rating: 4.9, time: '30 min', recommended: false, image: "./src/assets/images/tradicional.jpeg" },
     { id: 3, category: 'manicura', name: "Manicura semipermanente ", price: 20.00, rating: 4.9, time: '45 min', recommended: false, image: "./src/assets/images/semipermanente.jpeg" },
@@ -217,7 +217,7 @@ const App = () => {
     { id: 21, category: 'otros', name: "Retiro por mantenimiento", price: 5.00, rating: 4.7, time: '15 min', recommended: false, image: "./src/assets/images/base-protein.jpeg" },
     { id: 22, category: 'otros', name: "Reparacion de uña", price: 3.00, rating: 4.7, time: '15 min', recommended: false, image: "./src/assets/images/base-protein.jpeg" },
     { id: 23, category: 'otros', name: "Manos y pies semipermanente", price: 45.00, rating: 4.7, time: '2 horas 15 min', recommended: true, image: "./src/assets/images/base-protein.jpeg" },
-  ];
+  ], []);
 
   const AVATARS = [
     "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
@@ -417,13 +417,35 @@ const App = () => {
     setSelectedTime(null);
   };
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredServices = useMemo(() => {
+    if (!searchQuery) return SERVICES;
+    const q = searchQuery.toLowerCase().trim();
+    return SERVICES.filter(s => {
+      return (
+        s.name.toLowerCase().includes(q) ||
+        (s.category && s.category.toLowerCase().includes(q))
+      );
+    });
+  }, [searchQuery, SERVICES]);
+
   const isAdmin = user?.is_admin || user?.email === 'admin@anela.com';
 
   return (
-    <div className="min-h-screen bg-bg-default text-text-dark font-sans pb-28">
+    <div className="min-h-screen bg-bg text-text-dark font-sans pb-28">
       
       {/* HEADER */}
-      {step !== 'profile' && <Header cart={cart} appointments={appointments} setStep={setStep} />}
+      {step !== 'profile' && (
+        <Header
+          cartCount={cart.length}
+          appointmentCount={appointments.length}
+          setStep={setStep}
+          onCartClick={() => setStep('calendar')}
+          searchQuery={searchQuery}
+          onSearchClick={setSearchQuery}
+        />
+      )}
 
       {/* BOTÓN FLOTANTE "IR A RESERVAR" SI HAY CARRITO */}
       {!isAdmin && <FloatingButton cart={cart} setStep={setStep} />}
@@ -431,10 +453,10 @@ const App = () => {
       <main className={`px-6 space-y-8 animate-in ${step === 'profile' ? 'pt-16' : ''}`}>
         
         {/* HOME VIEW */}
-        {step === 'home' && !isAdmin && <HomeView appointments={appointments} setStep={setStep} CATEGORIES={CATEGORIES} SERVICES={SERVICES} cart={cart} addToCart={addToCart} startReschedule={startReschedule} cancelAppointment={cancelAppointment} setSelectedCategory={setSelectedCategory} />}
+        {step === 'home' && !isAdmin && <HomeView appointments={appointments} setStep={setStep} CATEGORIES={CATEGORIES} SERVICES={filteredServices} cart={cart} addToCart={addToCart} startReschedule={startReschedule} cancelAppointment={cancelAppointment} setSelectedCategory={setSelectedCategory} />}
 
         {/* SERVICES VIEW */}
-        {!isAdmin && step === 'services' && <ServicesView setStep={setStep} selectedCategory={selectedCategory} SERVICES={SERVICES} cart={cart} addToCart={addToCart} />}
+        {!isAdmin && step === 'services' && <ServicesView setStep={setStep} selectedCategory={selectedCategory} SERVICES={filteredServices} cart={cart} addToCart={addToCart} />}
 
         {/* CALENDAR VIEW */}
         {!isAdmin && step === 'calendar' && <CalendarView setStep={setStep} cart={cart} removeFromCart={removeFromCart} CATEGORIES={CATEGORIES} selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTime={selectedTime} setSelectedTime={setSelectedTime} user={user} saveAppointment={saveAppointment} reschedulingId={reschedulingId} />}

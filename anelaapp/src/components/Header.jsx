@@ -1,7 +1,7 @@
 import React from 'react';
 import { ShoppingCart, Bell, Search, Settings2, MapPin } from 'lucide-react';
 
-const Header = ({ cart, appointments, setStep }) => (
+const Header = ({ cart, appointments, setStep, searchQuery = '', onSearchClick = () => {} }) => (
   <header className="px-6 pt-12 pb-6 space-y-6">
     <div className="flex justify-between items-center">
       <div className="flex flex-col">
@@ -30,6 +30,8 @@ const Header = ({ cart, appointments, setStep }) => (
       <input 
         type="text" 
         placeholder="Busca masajes, faciales..." 
+        value={searchQuery}
+        onChange={(e) => onSearchClick(e.target.value)}
         className="w-full bg-white py-4 pl-12 pr-12 rounded-2xl shadow-sm border-none focus:ring-2 focus:ring-primary/20 font-medium text-sm transition-all"
       />
       <div className="absolute inset-y-0 right-4 flex items-center text-primary">

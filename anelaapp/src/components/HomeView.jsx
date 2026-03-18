@@ -6,7 +6,7 @@ const HomeView = ({ appointments, setStep, CATEGORIES, SERVICES, cart, addToCart
     <div className="bg-primary rounded-[2.5rem] p-8 flex justify-between items-center relative overflow-hidden shadow-2xl">
       <div className="relative z-10 space-y-4 max-w-[60%]">
         <span className="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Oferta Exclusiva</span>
-        <h2 className="text-2xl font-bold leading-tight">Tu piel merece lo <span className="text-secondary">mejor</span></h2>
+        <h2 className="text-2xl font-bold leading-tight text-primary-light">Tu piel merece lo <span className="text-secondary">mejor</span></h2>
         <button onClick={() => setStep('services')} className="bg-white text-primary px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg">Descubrir</button>
       </div>
       <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=400" className="absolute right-0 top-0 h-full w-1/3 object-cover opacity-30" alt="Spa hero" />
