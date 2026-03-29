@@ -288,7 +288,7 @@ const App = () => {
       const isAdmin = userObj?.is_admin || userObj?.email === 'admin@anela.com';
       const defaultStep = isAdmin ? 'admin' : 'home';
 
-      if (cart.length > 0 && !options.skipSave) await saveAppointment(authUser.id);
+      if (cart.length > 0 && !options.skipSave) await saveAppointment({ userId: authUser.id });
       else if (cart.length === 0) setStep(defaultStep);
     } catch (err) {
       console.error('auth error:', err.message || err);
@@ -296,7 +296,8 @@ const App = () => {
     }
   };
 
-  const saveAppointment = async (userId = null) => {
+  const saveAppointment = async (options = {}) => {
+    const { userId, paymentMethod } = options;
     const currentUser = userId ? { id: userId } : user;
     if (!currentUser) return;
 
@@ -323,6 +324,7 @@ const App = () => {
         date: selectedDate || "24 Feb",
         time: selectedTime || "10:00 AM",
         status: "Confirmado",
+        payment_method: paymentMethod || 'online',
         timestamp: new Date().toISOString()
       };
       try {

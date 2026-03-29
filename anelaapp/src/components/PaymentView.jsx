@@ -14,6 +14,7 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
   const [isLogin, setIsLogin] = useState(true);
   const [showPayment, setShowPayment] = useState(false);
   const [justRegistered, setJustRegistered] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('online');
 
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [signupData, setSignupData] = useState({
@@ -119,6 +120,23 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
               <span className="text-2xl font-black text-primary">${totalPrice.toFixed(2)}</span>
             </div>
           </div>
+          <div className="mb-6">
+            <p className="text-sm font-medium text-gray-700 mb-3">Método de pago:</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPaymentMethod('online')}
+                className={`flex-1 py-3 rounded-2xl font-bold text-sm transition-all ${paymentMethod === 'online' ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
+                Pagar ahora
+              </button>
+              <button
+                onClick={() => setPaymentMethod('efectivo')}
+                className={`flex-1 py-3 rounded-2xl font-bold text-sm transition-all ${paymentMethod === 'efectivo' ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
+                Pagar en efectivo
+              </button>
+            </div>
+          </div>
           {errors.submit && <p className="text-red-500 text-sm text-center">{errors.submit}</p>}
           <div className="flex gap-3 mt-8">
             <button
@@ -127,13 +145,22 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
             >
               Volver
             </button>
-            <button
-              onClick={launchStripeCheckout}
-              disabled={loading}
-              className="flex-1 bg-primary text-white py-5 rounded-3xl font-bold shadow-xl uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
-            >
-              {loading ? 'Procesando...' : 'Pagar ahora'}
-            </button>
+            {paymentMethod === 'online' ? (
+              <button
+                onClick={launchStripeCheckout}
+                disabled={loading}
+                className="flex-1 bg-primary text-white py-5 rounded-3xl font-bold shadow-xl uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
+              >
+                {loading ? 'Procesando...' : 'Pagar ahora'}
+              </button>
+            ) : (
+              <button
+                onClick={() => saveAppointment({ paymentMethod: 'efectivo' })}
+                className="flex-1 bg-primary text-white py-5 rounded-3xl font-bold shadow-xl uppercase text-[10px] tracking-widest active:scale-95 transition-all"
+              >
+                Agendar cita
+              </button>
+            )}
           </div>
         </div>
       </div>
