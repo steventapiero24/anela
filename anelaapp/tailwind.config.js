@@ -6,6 +6,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        heading: ['Futura', 'system-ui', 'sans-serif'],
+        body: ['Futura', 'system-ui', 'sans-serif'],
+      },
       colors: {
         primary: 'var(--color-primary)',
         'primary-light': 'var(--color-primary-light)',

@@ -2,7 +2,7 @@
 @import "./theme.css";
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Futura', system-ui, Avenir, Helvetica, Arial, sans-serif;
   background-color: var(--color-bg);
 }
 

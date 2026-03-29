@@ -1,3 +1,17 @@
+@font-face {
+  font-family: 'Futura';
+  src: url('/src/assets/fonts/futura-std-4/FuturaStdBook.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Futura';
+  src: url('/src/assets/fonts/futura-std-4/FuturaStdBold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
 :root {
   /* Colores de tema */
   --color-primary: #555233;
