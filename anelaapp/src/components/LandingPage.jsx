@@ -88,17 +88,9 @@ const App = () => {
 
       {/* Hero */}
 
-      <nav className='flex px-5 md:py-6'>
-        <div className='flex flex-1'>
-          <img src="../src/assets/images/logo.svg" alt="logo" className="w-54  rounded-full" />
-        </div>
-        <div>
-          <button
-          onClick={() => navigate('/agenda')}
-          className="cursor-pointer mt-6 bg-primary text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest  h"
-        >
-          Quiero mi cita
-        </button>
+      <nav className='flex px-5 md:px-0'>
+        <div className='flex flex-1 justify-center bg-primary rounded-4xl p-5 '>
+          <img src="../src/assets/images/logo-yellow.svg" alt="logo" className="w-54  rounded-full" />
         </div>
       </nav>
       {/* Contenedor Principal */}
@@ -111,6 +103,14 @@ const App = () => {
               Un ritual para tus manos.
             </h1>
             <p className='text-left'>Más que una manicura.</p>
+             <div className='flex items-start'>
+          <button
+          onClick={() => navigate('/agenda')}
+          className="cursor-pointer mt-6 bg-primary text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest  h"
+        >
+          Quiero mi cita
+        </button>
+        </div>
           </div>
             <div className="flex items-center gap-3 pb-2">            
               <div className="flex -space-x-2">
