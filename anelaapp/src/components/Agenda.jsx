@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Scissors, Sparkles, Flower2, Zap } from 'lucide-react';
+import { Sparkles, Hand, TextAlignStart,  Footprints, CircleFadingPlus } from 'lucide-react';
 import Header from './Layouts/Header';
 import FloatingButton from './FloatingButton';
 import HomeView from './HomeView';
@@ -186,11 +186,11 @@ const App = () => {
 
   // --- DATOS MOCK ---
   const CATEGORIES = useMemo(() => [
-    { id: 'manicura', name: 'Manicuras', icon: <Sparkles size={24} />, bg: 'bg-secondary/20' },
-    { id: 'acrilico', name: ' Acrilico softgel', icon: <Scissors size={24} />, bg: 'bg-primary-light' },
-    { id: 'pedicuras', name: ' Pedicuras', icon: <Scissors size={24} />, bg: 'bg-primary-light' },
-    { id: 'suplementos', name: 'Suplementos', icon: <Zap size={24} />, bg: 'bg-secondary/20' },
-    { id: 'otros', name: 'Otros', icon: <Flower2 size={24} />, bg: 'bg-secondary/20' },
+    { id: 'manicura', name: 'Manicuras', icon: <Hand size={24} />, bg: 'bg-secondary-light' },
+    { id: 'acrilico', name: ' Softgel', icon: <Sparkles size={24} />, bg: 'bg-secondary-light' },
+    { id: 'pedicuras', name: ' Pedicuras', icon: <Footprints size={24} />, bg: 'bg-secondary-light' },
+    { id: 'suplementos', name: 'Suplementos', icon: <CircleFadingPlus size={24} />, bg: 'bg-secondary-light' },
+    { id: 'otros', name: 'Otros', icon: <TextAlignStart size={24} />, bg: 'bg-secondary-light' },
   ], []);
 
   const SERVICES = useMemo(() => [

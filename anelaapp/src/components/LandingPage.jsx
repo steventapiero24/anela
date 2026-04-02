@@ -312,7 +312,7 @@ const App = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
             {/* Logo y Bio */}
             <div className="md:col-span-1">
-              <h2 className="text-3xl font-serif mb-6 tracking-tighter italic">Nail Studio.</h2>
+              <h2 className="text-3xl font-serif mb-6 tracking-tighter italic">Anela nails and beauty.</h2>
               <p className="text-sm text-gray-500 leading-relaxed mb-8">
                 Fusionamos el arte de la manicura con el bienestar orgánico para manos y pies que inspiran.
               </p>

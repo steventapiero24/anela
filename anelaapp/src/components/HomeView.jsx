@@ -9,7 +9,7 @@ const HomeView = ({ appointments, setStep, CATEGORIES, SERVICES, cart, addToCart
         <h2 className="text-2xl font-bold leading-tight text-primary-light">Tu piel merece lo <span className="text-secondary">mejor</span></h2>
         <button onClick={() => setStep('services')} className="bg-white text-primary px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg">Descubrir</button>
       </div>
-      <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=400" className="absolute right-0 top-0 h-full w-1/3 object-cover opacity-30" alt="Spa hero" />
+      <img src="https://images.unsplash.com/photo-1587729927031-830c32f520da?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?auto=format&fit=crop&q=80&w=400" className="absolute right-0 top-0 h-full w-1/3 object-cover opacity-30" alt="Spa hero" />
     </div>
 
     {/* CITAS ACTIVAS */}
@@ -19,12 +19,12 @@ const HomeView = ({ appointments, setStep, CATEGORIES, SERVICES, cart, addToCart
           <h3 className="text-lg font-bold tracking-tight">Tus próximas citas</h3>
           <button onClick={() => setStep('profile')} className="text-xs font-bold text-primary">Ver todas</button>
         </div>
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide ">
           {appointments.map(appt => (
             <div key={appt.id} className="min-w-[300px] bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 space-y-5">
               <div className="flex justify-between items-start border-b border-gray-50 pb-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-glow">
+                    <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center ">
                     <CalendarIcon size={20} />
                   </div>
                   <div>
@@ -35,7 +35,7 @@ const HomeView = ({ appointments, setStep, CATEGORIES, SERVICES, cart, addToCart
                 <span className="bg-primary-light text-primary px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-tighter">Confirmado</span>
               </div>
               <div className="space-y-3">
-                <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest">Servicios contratados</p>
+                <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest text-left">Servicios contratados</p>
                 <div className="space-y-2">
                   {appt.services.map(srv => (
                     <div key={srv.id} className="flex items-center justify-between group">

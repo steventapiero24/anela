@@ -65,7 +65,7 @@ const CalendarView = ({ setStep, cart, removeFromCart, CATEGORIES, selectedDate,
                setStep('payment');
              }
            }}
-           className="w-full bg-primary text-white py-5 rounded-3xl font-bold shadow-xl shadow-glow disabled:opacity-30 uppercase tracking-widest text-[10px] transition-all hover:scale-[1.02] active:scale-95"
+           className="w-full bg-primary text-white py-5 rounded-3xl font-bold shadow-xl disabled:opacity-30 uppercase tracking-widest text-[10px] transition-all cursor-pointer"
          >
            {reschedulingId ? 'Guardar cambios' : 'Ir a Pago'}
          </button>
