@@ -4,7 +4,7 @@ import { Calendar as CalendarIcon, RefreshCw, X, Star, Plus, Check, Scissors, Sp
 const HomeView = ({ appointments, setStep, CATEGORIES, SERVICES, cart, addToCart, startReschedule, cancelAppointment, setSelectedCategory }) => (
   <div className="space-y-8">
     <div className="bg-primary rounded-[2.5rem] p-8 flex justify-between items-center relative overflow-hidden shadow-2xl">
-      <div className="relative z-10 space-y-4 max-w-[60%]">
+      <div className="relative z-10 space-y-4 max-w-[60%] flex flex-col">
         <span className="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Oferta Exclusiva</span>
         <h2 className="text-2xl font-bold leading-tight text-primary-light">Tu piel merece lo <span className="text-secondary">mejor</span></h2>
         <button onClick={() => setStep('services')} className="bg-white text-primary px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg">Descubrir</button>

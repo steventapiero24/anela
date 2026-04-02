@@ -3,6 +3,7 @@
   src: url('/src/assets/fonts/futura-std-4/FuturaStdBook.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -10,14 +11,15 @@
   src: url('/src/assets/fonts/futura-std-4/FuturaStdBold.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
+  font-display: swap;
 }
 
 :root {
   /* Colores de tema */
-  --color-primary: #555233;
+  --color-primary: #565C4B;
   --color-primary-light: #FFF988;
   --color-secondary: #FFC2C4;
-  --color-secondary-light: #F7E9E1;
+  --color-secondary-light: #BED393;
 
   /* Texto */
   --color-text-dark: #1A1A1A;
@@ -42,3 +44,15 @@
 .text-secondary-light { color: var(--color-secondary-light); }
 .shadow-soft { box-shadow: var(--shadow-soft); }
 .shadow-glow { box-shadow: var(--shadow-glow); }
+
+/* Botón con hover suave */
+.btn-agenda {
+  background-color: var(--color-secondary-light);
+  transition: .3s ease;
+  color: var(--color-primary);
+}
+
+.btn-agenda:hover {
+  background-color: var(--color-secondary);
+  color: var(--color-primary);
+}

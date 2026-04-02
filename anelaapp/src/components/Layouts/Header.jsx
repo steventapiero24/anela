@@ -1,9 +1,22 @@
 import React from 'react';
-import { MapPin, ShoppingCart, Bell, Search, Settings2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, MapPin, ShoppingCart, Bell, Search, Settings2 } from 'lucide-react';
 
 const Header = ({ cartCount, appointmentCount, onCartClick, searchQuery, onSearchClick }) => {
+  const navigate = useNavigate();
+
   return (
     <header className="px-6 pt-12 pb-6 space-y-6">
+      <div className="flex items-center justify-between mb-2">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-1 text-primary font-bold text-sm hover:text-primary/80 cursor-pointer mb-2"
+          aria-label="Volver a landing"
+        >
+          <ArrowLeft size={16} />
+          <span>Volver</span>
+        </button>
+      </div>
       <div className="flex justify-between items-center">
         <div className="flex flex-col">
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tu ubicación</span>

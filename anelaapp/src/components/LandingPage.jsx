@@ -106,7 +106,7 @@ const App = () => {
              <div className='flex items-start'>
           <button
           onClick={() => navigate('/agenda')}
-          className="cursor-pointer mt-6 bg-primary text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest  h"
+          className="btn-agenda cursor-pointer mt-6  text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest hover:text-primary"
         >
           Quiero mi cita
         </button>
@@ -120,6 +120,7 @@ const App = () => {
                       src={`https://i.pravatar.cc/100?img=${i + 22}`} 
                       alt={`Cliente ${i}`} 
                       className="w-full h-full object-cover"
+                      loading="lazy"
                     />
                   </div>
                 ))}
@@ -141,6 +142,8 @@ const App = () => {
             <div className="aspect-[4/5] overflow-hidden rounded-2xl bg-gray-100">
               <img 
                 src="https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&q=80&w=1000" 
+                srcSet="https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&q=80&fm=webp&w=500 500w, https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&q=80&fm=webp&w=1000 1000w, https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&q=80&w=500 500w, https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&q=80&w=1000 1000w"
+                sizes="(max-width: 768px) 100vw, 58vw"
                 alt="Manicura elegante en tonos neutros" 
                 className="w-full h-full object-cover"
               />
@@ -175,19 +178,22 @@ const App = () => {
               </div>
               <div className="bottom-0 right-0 w-full h-3/5">
                 <img 
-                  src="https://plus.unsplash.com/premium_photo-1661499249417-c20d6b668469?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                  src="https://plus.unsplash.com/premium_photo-1661499249417-c20d6b668469?q=80&w=400&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                  srcSet="https://plus.unsplash.com/premium_photo-1661499249417-c20d6b668469?q=80&w=400&auto=format&fit=crop&fm=webp&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D 400w, https://plus.unsplash.com/premium_photo-1661499249417-c20d6b668469?q=80&w=687&auto=format&fit=crop&fm=webp&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D 687w, https://plus.unsplash.com/premium_photo-1661499249417-c20d6b668469?q=80&w=400&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D 400w, https://plus.unsplash.com/premium_photo-1661499249417-c20d6b668469?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D 687w"
+                  sizes="(max-width: 768px) 100vw, 40vw"
                   alt="Relajación de pies con aceites" 
                   className="w-full h-full object-cover rounded-tl-3xl shadow-[-20px_-20px_40px_rgba(0,0,0,0.05)]"
+                  loading="lazy"
                 />
               </div>
             </div>
 
             {/* 3. Tarjeta Esmaltes 10-Free (Inferior Derecha) */}
-            <div className="bg-[#3B473C] p-10 rounded-2xl text-white relative overflow-hidden">
+            <div className="bg-primary p-10 rounded-2xl text-white relative overflow-hidden">
               <div className="flex gap-8 items-center relative z-10">
                 <div className="w-28 h-44 overflow-hidden rounded-full shrink-0 shadow-2xl">
                   <img 
-                    src="https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&q=80&w=400" 
+                    src="https://images.unsplash.com/photo-1619607146034-5a05296c8f9a?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
                     alt="Botella de esmalte de lujo" 
                     className="w-full h-full object-cover"
                   />
@@ -216,10 +222,10 @@ const App = () => {
         <div className="text-center max-w-3xl mx-auto mb-32 flex flex-col items-center">
           <div className="flex gap-2 mb-10">
              <div className="w-14 h-18 bg-white p-1.5 rounded-sm shadow-xl border border-gray-100 -rotate-6">
-                <img src="https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&q=80&w=100" className="w-full h-full object-cover grayscale opacity-80" />
+                <img src="https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&q=80&w=100" className="w-full h-full object-cover grayscale opacity-80" loading="lazy" />
              </div>
              <div className="w-14 h-18 bg-white p-1.5 rounded-sm shadow-xl border border-gray-100 rotate-6 -ml-4 mt-2">
-                <img src="https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&q=80&w=100" className="w-full h-full object-cover grayscale opacity-80" />
+                <img src="https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&q=80&w=100" className="w-full h-full object-cover grayscale opacity-80" loading="lazy" />
              </div>
           </div>
           <blockquote className="text-3xl md:text-[40px] font-serif leading-[1.2] mb-10 tracking-tight text-[#1A1A1A]">
@@ -244,10 +250,11 @@ const App = () => {
                 src="../src/assets/images/cristales.jpeg" 
                 alt="Aceite revitalizante de cutícula" 
                 className="w-56 md:w-64 object-contain rounded-full shadow-2xl"
+                loading="lazy"
               />
               <div className="absolute top-1/2 -left-16 transform -translate-y-1/2 bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-gray-100 flex items-center gap-4 min-w-[200px]">
                 <div className="w-12 h-12 bg-[#F0F0F0] rounded-lg overflow-hidden shrink-0">
-                  <img src="../src/assets/images/cristales.jpeg" />
+                  <img src="../src/assets/images/cristales.jpeg" loading="lazy" />
                 </div>
                 <div className="text-[11px] leading-tight">
                   <p className="text-gray-400 font-bold mb-1 tracking-tight">Cuidado</p>
@@ -260,13 +267,16 @@ const App = () => {
             {/* Esmalte Signature */}
             <div className="relative group z-20">
               <img 
-                src="https://images.unsplash.com/photo-1602585578130-c9076e09330d?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                src="https://images.unsplash.com/photo-1602585578130-c9076e09330d?q=80&w=400&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                srcSet="https://images.unsplash.com/photo-1602585578130-c9076e09330d?q=80&w=400&auto=format&fit=crop&fm=webp&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D 400w, https://images.unsplash.com/photo-1602585578130-c9076e09330d?q=80&w=687&auto=format&fit=crop&fm=webp&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D 687w, https://images.unsplash.com/photo-1602585578130-c9076e09330d?q=80&w=400&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D 400w, https://images.unsplash.com/photo-1602585578130-c9076e09330d?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D 687w"
+                sizes="(max-width: 768px) 100vw, 30vw"
                 alt="Esmalte tono tierra" 
                 className="w-64 md:w-72 object-contain"
+                loading="lazy"
               />
               <div className="absolute top-1/4 -right-16 transform -translate-y-1/2 bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-gray-100 flex items-center gap-4 min-w-[200px]">
                 <div className="w-12 h-12 bg-[#F0F0F0] rounded-lg overflow-hidden shrink-0">
-                   <img src="https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format&fit=crop&q=80&w=60" className="w-full h-full object-cover" />
+                   <img src="https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format&fit=crop&q=80&w=60" className="w-full h-full object-cover" loading="lazy" />
                 </div>
                 <div className="text-[11px] leading-tight">
                   <p className="text-gray-400 font-bold mb-1 tracking-tight">Esmaltado</p>
@@ -355,7 +365,7 @@ const App = () => {
           {/* Copyright */}
           <div className="pt-10 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
-              © 2024 Nail Studio & SPA. Todos los derechos reservados.
+              © 2026 Anela nails. Todos los derechos reservados.
             </p>
             <div className="flex gap-8 text-[10px] text-gray-400 uppercase tracking-widest font-bold">
               <span className="hover:text-gray-600 cursor-pointer transition-colors">Privacidad</span>
