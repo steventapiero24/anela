@@ -26,20 +26,21 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
     confirmPassword: '',
   });
 
-  // Si el usuario ya está logueado, mostrar directamente el pago
+  // Si el usuario ya está logueado, mostrar directamente las opciones de pago
   useEffect(() => {
-    if (user && user.id && justRegistered) {
-      // Usuario se acaba de registrar o loguear, iniciar pago automáticamente
-      setJustRegistered(false);
+    if (user && user.id) {
+      // Usuario logueado, mostrar opciones de pago
       setShowPayment(true);
-    } else if (user && user.id) {
-      // Usuario estaba logueado, no mostrar placeholder
-      setShowPayment(false);
     }
-  }, [user, justRegistered]);
+  }, [user]);
 
   const launchStripeCheckout = useCallback(async () => {
-    if (!cart || cart.length === 0) return;
+    if (!cart || cart.length === 0) {
+      setErrors({ submit: 'El carrito está vacío.' });
+      return;
+    }
+    setLoading(true);
+    setErrors({});
     try {
       localStorage.setItem('pending_appt', JSON.stringify({ cart, selectedDate, selectedTime, reschedulingId }));
       const resp = await fetch('http://localhost:4242/create-checkout-session', {
@@ -56,14 +57,10 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
     } catch (err) {
       console.error('checkout error', err);
       setErrors({ submit: err.message || 'Error al iniciar el pago' });
+    } finally {
+      setLoading(false);
     }
   }, [cart, selectedDate, selectedTime, reschedulingId, user]);
-
-  useEffect(() => {
-    if (showPayment && cart && cart.length > 0) {
-      launchStripeCheckout();
-    }
-  }, [showPayment, cart, launchStripeCheckout]);
 
   // reprogramación sin pago
   if (reschedulingId) {

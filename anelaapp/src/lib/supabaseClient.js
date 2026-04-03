@@ -1,39 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-// Check if Supabase credentials are properly configured
-// Must have valid URL and a real API key (should start with eyJ...)
-export const isSupabaseConfigured = () => {
-  const hasUrl = supabaseUrl && supabaseUrl.trim() !== '' && supabaseUrl.includes('supabase.co')
-  const hasValidKey = supabaseAnonKey && supabaseAnonKey.trim() !== '' && supabaseAnonKey.startsWith('eyJ')
-  const isConfigured = hasUrl && hasValidKey
-  
-  if (!isConfigured) {
-    console.log('[SUPABASE] Not configured. Using mock mode.');
-    console.log('  - URL:', hasUrl ? '✓' : '✗')
-    console.log('  - Key:', hasValidKey ? '✓' : '✗')
-  }
-  
-  return isConfigured
-}
-
-export const supabase = isSupabaseConfigured() 
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        storage: {
-          getItem: (key) => localStorage.getItem(key),
-          setItem: (key, value) => localStorage.setItem(key, value),
-          removeItem: (key) => localStorage.removeItem(key),
-        },
-      },
-    })
-  : null
-
 // Import mock helpers for fallback
 import {
   mockSignIn,
@@ -48,6 +14,52 @@ import {
   mockDeleteAppointment,
   mockGetCurrentSession,
 } from './mockHelpers'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+console.log('[SUPABASE] Environment variables loaded:')
+console.log('  - VITE_SUPABASE_URL:', supabaseUrl ? '✓ Set' : '✗ Missing')
+console.log('  - VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✓ Set' : '✗ Missing')
+
+// Check if Supabase credentials are properly configured
+// Must have valid URL and a real API key (should start with eyJ... or sb_publishable...)
+export const isSupabaseConfigured = () => {
+  const hasUrl = supabaseUrl && supabaseUrl.trim() !== '' && supabaseUrl.includes('supabase.co')
+  const hasValidKey = supabaseAnonKey && supabaseAnonKey.trim() !== '' && (
+    supabaseAnonKey.startsWith('eyJ') || supabaseAnonKey.startsWith('sb_publishable_')
+  )
+  const isConfigured = hasUrl && hasValidKey
+
+  if (!isConfigured) {
+    console.log('[SUPABASE] Not configured. Using mock mode.');
+    console.log('  - URL:', hasUrl ? '✓' : '✗')
+    console.log('  - Key:', hasValidKey ? '✓' : '✗')
+    console.log('  - Key starts with:', supabaseAnonKey?.substring(0, 20) + '...')
+  } else {
+    console.log('[SUPABASE] ✓ Configured correctly. Using production mode.')
+  }
+
+  return isConfigured
+}
+
+export const supabase = isSupabaseConfigured() 
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce', // More secure flow
+        storage: {
+          getItem: (key) => localStorage.getItem(key),
+          setItem: (key, value) => localStorage.setItem(key, value),
+          removeItem: (key) => localStorage.removeItem(key),
+        },
+      },
+    })
+  : null
+
+console.log('[SUPABASE] Supabase client created:', supabase ? '✓ YES' : '✗ NO')
 
 // Helpers with fallback to mock implementations
 export const signIn = async ({ email, password }) => {
@@ -65,16 +77,60 @@ export const signIn = async ({ email, password }) => {
 }
 
 export const signUp = async ({ email, password }) => {
+  console.log('[SUPABASE] signUp called with:', { email, password: '***' })
+  console.log('[SUPABASE] isSupabaseConfigured():', isSupabaseConfigured())
+
   if (!isSupabaseConfigured()) {
+    console.log('[SUPABASE] Using mock signup')
     return mockSignUp({ email, password })
   }
+
+  console.log('[SUPABASE] Using real Supabase signup')
   try {
-    const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) throw error
+    const { data, error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        emailRedirectTo: window.location.origin
+      }
+    })
+    if (error) {
+      console.error('[SUPABASE] Signup error:', error)
+      throw error
+    }
+    console.log('[SUPABASE] Signup response:', data)
+    
+    // Check if user needs email confirmation
+    if (data.user && !data.session) {
+      console.log('[SUPABASE] Email confirmation required')
+      // User needs to confirm email before they can sign in
+      throw new Error('Por favor revisa tu email y confirma tu cuenta antes de continuar.')
+    }
+    
+    console.log('[SUPABASE] Signup success:', data?.user?.id)
     return data.user
   } catch (err) {
-    console.warn('supabase signup failed, falling back to mock:', err.message)
-    return mockSignUp({ email, password })
+    console.warn('[SUPABASE] Supabase signup failed:', err)
+    
+    // Check if it's a timeout/network error
+    const isNetworkError = err.message?.includes('timeout') || 
+                          err.message?.includes('network') || 
+                          err.message?.includes('fetch') ||
+                          err.message?.includes('Failed to fetch') ||
+                          err.name === 'TypeError'
+    
+    if (isNetworkError) {
+      console.log('[SUPABASE] Network error detected, using mock signup as fallback')
+      return mockSignUp({ email, password })
+    }
+    
+    // For auth errors (like email confirmation required), show proper message
+    if (err.message?.includes('Email not confirmed') || err.message?.includes('confirm')) {
+      throw new Error('Por favor revisa tu email y confirma tu cuenta antes de continuar.')
+    }
+    
+    // Re-throw other auth errors
+    throw err
   }
 }
 
@@ -201,7 +257,7 @@ export const deleteAppointment = async (id) => {
     return mockDeleteAppointment(id)
   }
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('appointments')
       .delete()
       .eq('id', id)

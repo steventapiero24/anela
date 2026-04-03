@@ -9,6 +9,16 @@ const STORAGE_SESSION_KEY = 'anela_session'
 let usersDB = []
 let appointmentsDB = []
 
+// Admin user - only user available in mock mode
+const ADMIN_USER = {
+  id: 'admin_user_001',
+  email: 'admin@anela.com',
+  password: 'admin123', // TODO: This will be managed by Supabase in production
+  full_name: 'Administrador Anela',
+  is_admin: true,
+  created_at: new Date().toISOString(),
+}
+
 // Hydrate from localStorage on startup
 const hydrate = () => {
   try {
@@ -33,6 +43,12 @@ const persist = () => {
 
 hydrate()
 
+// Initialize with admin user only if not already present
+if (!usersDB.find(u => u.email === 'admin@anela.com')) {
+  usersDB.push(ADMIN_USER)
+  persist()
+}
+
 export const mockSignIn = async ({ email, password }) => {
   const user = usersDB.find(u => u.email === email)
   if (!user || user.password !== password) {
@@ -43,20 +59,10 @@ export const mockSignIn = async ({ email, password }) => {
 }
 
 export const mockSignUp = async ({ email, password }) => {
-  const exists = usersDB.find(u => u.email === email)
-  if (exists) {
-    throw new Error('Email already registered')
-  }
-  const user = {
-    id: 'user_' + Math.random().toString(36).substr(2, 9),
-    email,
-    password,
-    created_at: new Date().toISOString(),
-  }
-  usersDB.push(user)
-  persist()
-  localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(user))
-  return { id: user.id, email: user.email }
+  // SignUp is disabled in mock mode - only admin user is available
+  // All user registration must go through Supabase in production
+  console.warn('[MOCK] SignUp disabled - only admin@anela.com is available in mock mode')
+  throw new Error('User registration is not available in mock mode. Please contact the administrator.')
 }
 
 export const mockSignOut = async () => {
