@@ -23,7 +23,6 @@ import {
   addAppointment as dbAddAppointment,
   updateAppointment as dbUpdateAppointment,
   deleteAppointment as dbDeleteAppointment,
-  initializeSession,
   supabase,
 } from '../lib/supabaseClient';
 
@@ -75,28 +74,26 @@ const App = () => {
     console.log('[AGENDA] Mount - initializing session');
 
     // Función para cargar datos del usuario
+  // Función para cargar datos del usuario (CORREGIDA SIN BLOQUEOS)
     const loadUserData = async (userId) => {
       if (!mounted) return;
       try {
         console.log('[AGENDA] Loading user data for:', userId);
-        const profile = await getUserProfile(userId);
-        console.log('[AGENDA] Profile loaded:', profile?.id);
-        if (mounted) setUser(profile);
-        if (mounted) setEditForm({
-          full_name: profile?.full_name || '',
-          email: profile?.email || '',
-          phone: profile?.phone || '',
-          avatar: profile?.avatar || AVATARS[1],
-        });
-        const appts = await fetchAppointments(userId);
-        console.log('[AGENDA] Appointments loaded:', appts?.length);
-        if (mounted) setAppointments(appts || []);
-
-        // Si el usuario es admin, abrir directamente el panel de administración
-        const isAdmin = profile?.is_admin || profile?.email === 'admin@anela.com';
-        if (mounted && isAdmin) setStep('admin');
-      } catch (err) {
-        console.error('[AGENDA] loadUserData error:', err);
+        
+        // En lugar de 'await', usamos '.then' para que la app continúe
+        getUserProfile(userId)
+          .then(profile => {
+            if (profile && mounted) {
+              console.log('[AGENDA] Perfil cargado con éxito');
+              setUser(profile);
+            }
+          })
+          .catch(err => {
+            console.warn("[AGENDA] Error cargando perfil (no crítico):", err);
+          });
+          
+      } catch (error) {
+        console.error("Error inesperado en loadUserData:", error);
       }
     };
 
@@ -146,17 +143,6 @@ const App = () => {
           console.error('[AGENDA] Session check error:', err);
         }
       }, 50);
-    } else {
-      // Fallback: cargar sesión manualmente si no está Supabase
-      console.log('[AGENDA] No Supabase listener, using fallback');
-      (async () => {
-        const sessionUser = await initializeSession();
-        console.log('[AGENDA] Fallback session:', sessionUser?.id || 'NONE');
-        if (sessionUser && mounted) {
-          const userId = sessionUser.id || sessionUser.user?.id || sessionUser.uid;
-          await loadUserData(userId);
-        }
-      })();
     }
 
     return () => {
@@ -249,52 +235,45 @@ const App = () => {
   };
 
   const handleAuth = async (mode, formData, options = {}) => {
-    // mode = 'login' | 'signup'
-    // options.skipSave -> avoid creating appointment immediately (used during payment flow)
     try {
+      console.log('[AGENDA] handleAuth start', { mode, email: formData.email });
       let authUser;
+
       if (mode === 'login') {
         authUser = await signIn({ email: formData.email, password: formData.password });
       } else if (mode === 'signup') {
         authUser = await signUp({ email: formData.email, password: formData.password });
-        // create profile immediately
-        const profile = {
+        
+        // --- AQUÍ ESTABA EL HUECO. CREAMOS EL PERFIL EN SUPABASE ---
+        await upsertProfile({
           id: authUser.id,
           email: formData.email,
-          full_name: `${formData.firstName} ${formData.lastName}`.trim(),
-          phone: formData.phone,
-          avatar: AVATARS[1],
-          points: 0,
-        };
-        await upsertProfile(profile);
+          full_name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || 'Usuario Nuevo',
+          phone: formData.phone || '',
+          avatar: AVATARS[1], // Usa el avatar por defecto
+          points: 0
+        });
+        console.log('[AGENDA] Perfil creado para nuevo usuario');
       }
 
-      // fetch profile and appointments
-      const profile = await getUserProfile(authUser.id);
-      const userObj = profile || { id: authUser.id, email: authUser.email };
-
+      // Seteamos el objeto de usuario básico
+      const userObj = { id: authUser.id, email: authUser.email };
       setUser(userObj);
-      setEditForm({
-        full_name: userObj.full_name || '',
-        email: userObj.email || authUser.email,
-        phone: userObj.phone || '',
-        avatar: userObj.avatar || AVATARS[1], 
-      });
 
-      const appts = await fetchAppointments(authUser.id);
-      setAppointments(appts || []);
+      // Redirección limpia
+      if (cart.length > 0) {
+        setStep('payment');
+      } else {
+        const isAdmin = authUser.email === 'admin@anela.com';
+        setStep(isAdmin ? 'admin' : 'home');
+      }
 
-      // Si el usuario es admin, abrir panel admin en lugar de home
-      const isAdmin = userObj?.is_admin || userObj?.email === 'admin@anela.com';
-      const defaultStep = isAdmin ? 'admin' : 'home';
-
-      if (cart.length > 0 && !options.skipSave) await saveAppointment({ userId: authUser.id });
-      else if (cart.length === 0) setStep(defaultStep);
     } catch (err) {
-      console.error('auth error:', err.message || err);
-      throw err;
+      console.error('auth error:', err);
+      alert('Error al entrar: ' + err.message);
     }
   };
+
 
   const saveAppointment = async (options = {}) => {
     const { userId, paymentMethod } = options;

@@ -1,26 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Import mock helpers for fallback
-import {
-  mockSignIn,
-  mockSignUp,
-  mockSignOut,
-  mockGetUserProfile,
-  mockUpsertProfile,
-  mockFetchAppointments,
-  mockFetchAllAppointments,
-  mockAddAppointment,
-  mockUpdateAppointment,
-  mockDeleteAppointment,
-  mockGetCurrentSession,
-} from './mockHelpers'
-
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 console.log('[SUPABASE] Environment variables loaded:')
-console.log('  - VITE_SUPABASE_URL:', supabaseUrl ? '✓ Set' : '✗ Missing')
-console.log('  - VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✓ Set' : '✗ Missing')
+console.log('  - VITE_SUPABASE_URL:', supabaseUrl || 'MISSING')
+console.log('  - VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? `${supabaseAnonKey.substring(0, 8)}...` : 'MISSING')
 
 // Check if Supabase credentials are properly configured
 // Must have valid URL and a real API key (should start with eyJ... or sb_publishable...)
@@ -61,18 +46,26 @@ export const supabase = isSupabaseConfigured()
 
 console.log('[SUPABASE] Supabase client created:', supabase ? '✓ YES' : '✗ NO')
 
-// Helpers with fallback to mock implementations
-export const signIn = async ({ email, password }) => {
-  if (!isSupabaseConfigured()) {
-    return mockSignIn({ email, password })
+const assertSupabaseConfigured = () => {
+  if (!supabase) {
+    throw new Error('Supabase no está configurado. El modo local ha sido desactivado.')
   }
+}
+
+export const signIn = async ({ email, password }) => {
+  assertSupabaseConfigured()
   try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
+    if (error) {
+      console.error('[SUPABASE] signIn error:', error)
+      throw error
+    }
+
+    console.log('[SUPABASE] signIn success:', data)
     return data.user
   } catch (err) {
-    console.warn('supabase signin failed, falling back to mock:', err.message)
-    return mockSignIn({ email, password })
+    console.error('[SUPABASE] supabase signin failed:', err)
+    throw err
   }
 }
 
@@ -80,113 +73,76 @@ export const signUp = async ({ email, password }) => {
   console.log('[SUPABASE] signUp called with:', { email, password: '***' })
   console.log('[SUPABASE] isSupabaseConfigured():', isSupabaseConfigured())
 
-  if (!isSupabaseConfigured()) {
-    console.log('[SUPABASE] Using mock signup')
-    return mockSignUp({ email, password })
-  }
+  assertSupabaseConfigured()
 
   console.log('[SUPABASE] Using real Supabase signup')
   try {
     const { data, error } = await supabase.auth.signUp({ 
       email, 
       password,
-      options: {
-        emailRedirectTo: window.location.origin
-      }
     })
+    console.log('[SUPABASE] Signup raw response:', { data, error })
     if (error) {
       console.error('[SUPABASE] Signup error:', error)
       throw error
     }
-    console.log('[SUPABASE] Signup response:', data)
-    
-    // Check if user needs email confirmation
-    if (data.user && !data.session) {
-      console.log('[SUPABASE] Email confirmation required')
-      // User needs to confirm email before they can sign in
-      throw new Error('Por favor revisa tu email y confirma tu cuenta antes de continuar.')
+
+    if (data?.user && !data?.session) {
+      console.warn('[SUPABASE] Signup created a user but no session was returned. Email confirmation may be required.')
+      return data.user
     }
-    
-    console.log('[SUPABASE] Signup success:', data?.user?.id)
+
+    console.log('[SUPABASE] Signup success:', data?.user?.id, 'session:', !!data?.session)
     return data.user
   } catch (err) {
     console.warn('[SUPABASE] Supabase signup failed:', err)
     
-    // Check if it's a timeout/network error
-    const isNetworkError = err.message?.includes('timeout') || 
-                          err.message?.includes('network') || 
-                          err.message?.includes('fetch') ||
-                          err.message?.includes('Failed to fetch') ||
-                          err.name === 'TypeError'
-    
-    if (isNetworkError) {
-      console.log('[SUPABASE] Network error detected, using mock signup as fallback')
-      return mockSignUp({ email, password })
-    }
-    
-    // For auth errors (like email confirmation required), show proper message
-    if (err.message?.includes('Email not confirmed') || err.message?.includes('confirm')) {
+    if (err?.message?.includes('Email not confirmed') || err?.message?.includes('confirm')) {
       throw new Error('Por favor revisa tu email y confirma tu cuenta antes de continuar.')
     }
     
-    // Re-throw other auth errors
     throw err
   }
 }
 
 export const signOut = async () => {
-  if (!isSupabaseConfigured()) {
-    return mockSignOut()
-  }
-  try {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-  } catch (err) {
-    console.warn('supabase signout failed, falling back to mock:', err.message)
-    return mockSignOut()
-  }
+  assertSupabaseConfigured()
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
 }
 
 export const getUserProfile = async (userId) => {
-  if (!isSupabaseConfigured()) {
-    return mockGetUserProfile(userId)
-  }
+  assertSupabaseConfigured()
   try {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
-      .single()
-    if (error && error.code !== 'PGRST116') throw error
-    return data
+      .eq('id', userId);
+      
+    if (error) throw error;
+    
+    // Si encontramos el usuario, devolvemos el primero. Si no, devolvemos null.
+    return data.length > 0 ? data[0] : null;
   } catch (err) {
-    console.warn('supabase getUserProfile failed, falling back to mock:', err.message)
-    return mockGetUserProfile(userId)
+    console.error('[SUPABASE] error en getUserProfile:', err);
+    return null;
   }
 }
 
 export const upsertProfile = async (profile) => {
-  if (!isSupabaseConfigured()) {
-    return mockUpsertProfile(profile)
-  }
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .upsert(profile, { returning: 'representation' })
-      .single()
-    if (error) throw error
-    return data
-  } catch (err) {
-    console.warn('supabase upsertProfile failed, falling back to mock:', err.message)
-    return mockUpsertProfile(profile)
-  }
+  assertSupabaseConfigured()
+  const { data, error } = await supabase
+    .from('profiles')
+    .upsert(profile, { returning: 'representation' })
+    .single()
+  if (error) throw error
+  return data
 }
 
 export const fetchAppointments = async (userId) => {
-  if (!isSupabaseConfigured()) {
-    return mockFetchAppointments(userId)
-  }
-  try {
+  assertSupabaseConfigured()
+
+  const attemptFetch = async () => {
     const { data, error } = await supabase
       .from('appointments')
       .select('*, profiles(*)')
@@ -194,95 +150,95 @@ export const fetchAppointments = async (userId) => {
       .order('timestamp', { ascending: false })
     if (error) throw error
     return data
+  }
+
+  try {
+    return await attemptFetch()
   } catch (err) {
-    console.warn('supabase fetchAppointments failed, falling back to mock:', err.message)
-    return mockFetchAppointments(userId)
+    if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+      console.warn('[SUPABASE] fetchAppointments aborted, retrying once...')
+      await new Promise(resolve => setTimeout(resolve, 150))
+      return await attemptFetch()
+    }
+    console.error('supabase fetchAppointments failed:', err.message, err)
+    throw err
   }
 }
 
 export const fetchAllAppointments = async () => {
-  if (!isSupabaseConfigured()) {
-    return mockFetchAllAppointments()
-  }
-  try {
+  assertSupabaseConfigured()
+
+  const attemptFetch = async () => {
     const { data, error } = await supabase
       .from('appointments')
       .select('*, profiles(*)')
       .order('timestamp', { ascending: false })
     if (error) throw error
     return data
+  }
+
+  try {
+    return await attemptFetch()
   } catch (err) {
-    console.warn('supabase fetchAllAppointments failed, falling back to mock:', err.message)
-    return mockFetchAllAppointments()
+    if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+      console.warn('[SUPABASE] fetchAllAppointments aborted, retrying once...')
+      await new Promise(resolve => setTimeout(resolve, 150))
+      return await attemptFetch()
+    }
+    console.error('supabase fetchAllAppointments failed:', err.message, err)
+    throw err
   }
 }
 
 export const addAppointment = async (appt) => {
-  if (!isSupabaseConfigured()) {
-    return mockAddAppointment(appt)
+  assertSupabaseConfigured()
+  // Quitamos el .single() para que devuelva un array con el objeto insertado
+  const { data, error } = await supabase
+    .from('appointments')
+    .insert(appt)
+    .select(); // <--- Usar .select() es la forma moderna en Supabase v2
+    
+  if (error) {
+    console.error('supabase addAppointment error:', error, 'payload:', appt)
+    throw error
   }
-  try {
-    const { data, error } = await supabase
-      .from('appointments')
-      .insert(appt)
-      .single()
-    if (error) throw error
-    return data
-  } catch (err) {
-    console.warn('supabase addAppointment failed, falling back to mock:', err.message)
-    return mockAddAppointment(appt)
-  }
+  
+  // Devolvemos el primer elemento insertado
+  return data && data.length > 0 ? data[0] : null;
 }
 
 export const updateAppointment = async (id, updates) => {
-  if (!isSupabaseConfigured()) {
-    return mockUpdateAppointment(id, updates)
-  }
-  try {
-    const { data, error } = await supabase
-      .from('appointments')
-      .update(updates)
-      .eq('id', id)
-      .single()
-    if (error) throw error
-    return data
-  } catch (err) {
-    console.warn('supabase updateAppointment failed, falling back to mock:', err.message)
-    return mockUpdateAppointment(id, updates)
-  }
+  assertSupabaseConfigured()
+  const { data, error } = await supabase
+    .from('appointments')
+    .update(updates)
+    .eq('id', id)
+    .single()
+  if (error) throw error
+  return data
 }
 
 export const deleteAppointment = async (id) => {
-  if (!isSupabaseConfigured()) {
-    return mockDeleteAppointment(id)
-  }
-  try {
-    const { error } = await supabase
-      .from('appointments')
-      .delete()
-      .eq('id', id)
-    if (error) throw error
-  } catch (err) {
-    console.warn('supabase deleteAppointment failed, falling back to mock:', err.message)
-    return mockDeleteAppointment(id)
-  }
+  assertSupabaseConfigured()
+  const { error } = await supabase
+    .from('appointments')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
 }
 
 export const getCurrentSession = async () => {
-  if (!isSupabaseConfigured()) {
-    return mockGetCurrentSession()
+  if (!supabase) {
+    console.warn('[SESSION] Supabase no está configurado. No se puede obtener sesión.')
+    return null
   }
   try {
-    // Primero obtiene la sesión actual
     const {
       data: { session },
     } = await supabase.auth.getSession()
-    
-    // Si hay una sesión válida, intenta refrescar el token
     if (session) {
       await supabase.auth.refreshSession()
     }
-    
     return session?.user || null
   } catch (err) {
     console.warn('getCurrentSession supabase error', err)
@@ -292,25 +248,19 @@ export const getCurrentSession = async () => {
 
 // Nueva función para esperar a que Supabase esté listo e hidrate la sesión
 export const initializeSession = async () => {
-  if (!isSupabaseConfigured()) {
-    console.log('[SESSION] Using mock session');
-    return mockGetCurrentSession()
+  if (!supabase) {
+    console.warn('[SESSION] Supabase no está configurado. No se puede inicializar la sesión.')
+    return null
   }
-  
+
   try {
     console.log('[SESSION] Initializing Supabase session...');
-    
-    // Espera un poco para que Supabase cargue la sesión desde localStorage
     await new Promise(resolve => setTimeout(resolve, 100))
-    
     const {
       data: { session },
     } = await supabase.auth.getSession()
-    
     console.log('[SESSION] Got session:', session?.user?.id ? 'YES' : 'NO');
-    
     if (session?.user) {
-      // Refrescar token si existe
       try {
         await supabase.auth.refreshSession()
         console.log('[SESSION] Token refreshed');
@@ -318,11 +268,8 @@ export const initializeSession = async () => {
         console.warn('[SESSION] Token refresh failed:', e)
       }
     }
-    
-    // Log localStorage state
     const keys = Object.keys(localStorage);
     console.log('[SESSION] localStorage keys:', keys.filter(k => k.includes('auth') || k.includes('anela')));
-    
     return session?.user || null
   } catch (err) {
     console.warn('[SESSION] initializeSession error', err)

@@ -13,7 +13,6 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [showPayment, setShowPayment] = useState(false);
-  const [justRegistered, setJustRegistered] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('online');
 
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -192,6 +191,12 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
+  const getErrorMessage = (err) => {
+    if (!err) return 'Ocurrió un error inesperado';
+    if (typeof err === 'string') return err;
+    return err?.message || err?.error_description || err?.statusText || JSON.stringify(err);
+  };
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
@@ -199,22 +204,29 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
     else if (!validateEmail(loginData.email)) newErrors.email = 'Email inválido';
     if (!loginData.password) newErrors.password = 'La contraseña es requerida';
     else if (loginData.password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
+    
     if (Object.keys(newErrors).length) {
       setErrors(newErrors);
       return;
     }
+
     setLoading(true);
+    console.log('[PAYMENT] login submit', { email: loginData.email });
+    
     try {
       await handleAuth('login', loginData, { skipSave: true });
-      setJustRegistered(true);
+      console.log('[PAYMENT] login success');
+      
+      // ✅ APAGAMOS EL LOADING AQUÍ, justo después del éxito
+      setLoading(false); 
     } catch (err) {
       console.error('login error', err);
-      setErrors({ submit: err.message || 'Error al ingresar' });
+      setErrors({ submit: getErrorMessage(err) || 'Error al ingresar' });
+      setLoading(false); // ❌ Si falla, también lo apagamos aquí
     }
-    setLoading(false);
   };
 
-  const handleSignupSubmit = async (e) => {
+ const handleSignupSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
     if (!signupData.firstName.trim()) newErrors.firstName = 'El nombre es requerido';
@@ -222,23 +234,30 @@ const PaymentView = ({ handleAuth, user, cart, saveAppointment, setStep, selecte
     if (!signupData.email) newErrors.email = 'El email es requerido';
     else if (!validateEmail(signupData.email)) newErrors.email = 'Email inválido';
     if (!signupData.phone) newErrors.phone = 'El teléfono es requerido';
-    else if (!validatePhone(signupData.phone)) newErrors.phone = 'Телéfono inválido';
+    else if (!validatePhone(signupData.phone)) newErrors.phone = 'Teléfono inválido';
     if (!signupData.password) newErrors.password = 'La contraseña es requerida';
     else if (signupData.password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
     if (signupData.password !== signupData.confirmPassword) newErrors.confirmPassword = 'Las contraseñas no coinciden';
+    
     if (Object.keys(newErrors).length) {
       setErrors(newErrors);
       return;
     }
+
     setLoading(true);
+    console.log('[PAYMENT] signup submit', { email: signupData.email });
+    
     try {
       await handleAuth('signup', signupData, { skipSave: true });
-      setJustRegistered(true);
+      console.log('[PAYMENT] signup success');
+      
+      // ✅ APAGAMOS EL LOADING AQUÍ
+      setLoading(false);
     } catch (err) {
       console.error('signup error', err);
-      setErrors({ submit: err.message || 'Error al registrar' });
+      setErrors({ submit: getErrorMessage(err) || 'Error al registrar' });
+      setLoading(false); // ❌ Si falla, también lo apagamos aquí
     }
-    setLoading(false);
   };
 
   return (
