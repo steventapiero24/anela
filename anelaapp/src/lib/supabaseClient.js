@@ -208,15 +208,22 @@ export const addAppointment = async (appt) => {
 }
 
 export const updateAppointment = async (id, updates) => {
-  assertSupabaseConfigured()
-  const { data, error } = await supabase
-    .from('appointments')
-    .update(updates)
-    .eq('id', id)
-    .single()
-  if (error) throw error
-  return data
-}
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .update(updates)
+      .eq('id', id)
+      .select(); // Usamos .select() en lugar de .single()
+
+    if (error) throw error;
+    
+    // Como .select() devuelve una lista, mandamos el primer elemento [0]
+    return data && data.length > 0 ? data[0] : null; 
+  } catch (error) {
+    console.error('Error en updateAppointment:', error);
+    throw error;
+  }
+};
 
 export const deleteAppointment = async (id) => {
   assertSupabaseConfigured()

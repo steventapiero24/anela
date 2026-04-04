@@ -284,50 +284,63 @@ const App = () => {
   };
 
 
-  const saveAppointment = async (options = {}) => {
+ const saveAppointment = async (options = {}) => {
     const { userId, paymentMethod } = options;
     const currentUser = userId ? { id: userId } : user;
     if (!currentUser) return;
 
     if (reschedulingId) {
+      // --- CAMINO 1: REAGENDAMIENTO (ACTUALIZAR CITA EXISTENTE) ---
       try {
-        await dbUpdateAppointment(reschedulingId, {
-          date: selectedDate,
-          time: selectedTime,
-        });
+        console.log('[AGENDA] Reagendando cita id:', reschedulingId);
+        
+        // Creamos el objeto con los nuevos datos
+        const updatedData = {
+          date: selectedDate || "24 Feb",
+          time: selectedTime || "10:00 AM",
+          // Calculamos el nuevo timestamp para que quede ordenado en Supabase
+          timestamp: new Date(`${selectedDate || '2026-02-24'} ${selectedTime || '10:00'}`).toISOString()
+        };
+
+        // 1. Guardamos en Supabase
+        await dbUpdateAppointment(reschedulingId, updatedData);
+        console.log('[AGENDA] Supabase actualizado con éxito');
+
+        // 2. Actualizamos la lista de citas en la interfaz de React
         setAppointments(appointments.map(appt =>
           appt.id === reschedulingId
-            ? { ...appt, date: selectedDate, time: selectedTime }
+            ? { ...appt, ...updatedData }
             : appt
         ));
+
+        // 3. Limpiamos el estado de reagendamiento
         setReschedulingId(null);
         await refreshAdminAppointments();
+        
       } catch (err) {
-        console.error('update appt error', err);
+        console.error('Error al actualizar la cita en Supabase:', err);
+        alert('No se pudo actualizar la fecha en el servidor.');
+        return; // Detenemos la función si falla para que no avance de pantalla
       }
     } else {
-      // --- AQUÍ ADAPTAMOS EL PAYLOAD A TU TABLA DE SUPABASE ---
-
+      // --- CAMINO 2: CREACIÓN (CITA TOTALMENTE NUEVA) ---
+      // Este es el bloque que ya tenías funcionando perfectamente
       const payload = {
         user_id: currentUser.id,
-        services: cart, // Al ser jsonb, le mandamos el array 'cart' directamente
+        services: cart, 
         date: selectedDate || "24 Feb",
         time: selectedTime || "10:00 AM",
         status: "pending", 
         timestamp: new Date().toISOString()
-        // Quitamos 'payment_method' porque no existe en tu tabla de Supabase
       };
       
       try {
-        console.log('[AGENDA] Intentando guardar cita en Supabase:', payload);
+        console.log('[AGENDA] Intentando guardar cita nueva en Supabase:', payload);
         
-        // Llamamos a la función que inserta en la base de datos
         const inserted = await dbAddAppointment(payload);
         
-        console.log('[AGENDA] Cita guardada con éxito:', inserted);
-
-        // Agregamos la cita devuelta por Supabase al estado para que aparezca en pantalla
         if (inserted) {
+          console.log('[AGENDA] Cita nueva guardada con éxito');
           setAppointments([inserted, ...appointments]);
         }
         
@@ -338,7 +351,8 @@ const App = () => {
       }
     }
 
-    // --- ESTO NO LO TOCAMOS (Tú lógica original para avanzar de pantalla) ---
+    // --- FINALIZACIÓN (COMÚN PARA AMBOS CAMINOS) ---
+    // Limpia el carrito, quita fechas y te manda a la pantalla de confirmación
     setStep('confirmation');
     setCart([]);
     setSelectedDate(null);
