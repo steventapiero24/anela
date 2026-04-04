@@ -75,12 +75,13 @@ const App = () => {
 
     // Función para cargar datos del usuario
   // Función para cargar datos del usuario (CORREGIDA SIN BLOQUEOS)
+  // Función para cargar datos del usuario
     const loadUserData = async (userId) => {
       if (!mounted) return;
       try {
         console.log('[AGENDA] Loading user data for:', userId);
         
-        // En lugar de 'await', usamos '.then' para que la app continúe
+        // 1. Cargar el perfil (Esto ya lo tienes)
         getUserProfile(userId)
           .then(profile => {
             if (profile && mounted) {
@@ -88,9 +89,17 @@ const App = () => {
               setUser(profile);
             }
           })
-          .catch(err => {
-            console.warn("[AGENDA] Error cargando perfil (no crítico):", err);
-          });
+          .catch(err => console.warn("[AGENDA] Error cargando perfil:", err));
+
+        // 2. ¡AQUÍ ESTÁ EL TRUCO! Cargamos las citas para que sean persistentes
+        fetchAppointments(userId)
+          .then(appts => {
+            if (appts && mounted) {
+              console.log('[AGENDA] Citas cargadas con éxito:', appts.length);
+              setAppointments(appts); // Guardamos las citas de Supabase en el estado
+            }
+          })
+          .catch(err => console.warn("[AGENDA] Error cargando citas:", err));
           
       } catch (error) {
         console.error("Error inesperado en loadUserData:", error);
@@ -297,24 +306,39 @@ const App = () => {
         console.error('update appt error', err);
       }
     } else {
+      // --- AQUÍ ADAPTAMOS EL PAYLOAD A TU TABLA DE SUPABASE ---
+
       const payload = {
         user_id: currentUser.id,
-        services: cart,
+        services: cart, // Al ser jsonb, le mandamos el array 'cart' directamente
         date: selectedDate || "24 Feb",
         time: selectedTime || "10:00 AM",
-        status: "Confirmado",
-        payment_method: paymentMethod || 'online',
+        status: "pending", 
         timestamp: new Date().toISOString()
+        // Quitamos 'payment_method' porque no existe en tu tabla de Supabase
       };
+      
       try {
+        console.log('[AGENDA] Intentando guardar cita en Supabase:', payload);
+        
+        // Llamamos a la función que inserta en la base de datos
         const inserted = await dbAddAppointment(payload);
-        setAppointments([inserted, ...appointments]);
+        
+        console.log('[AGENDA] Cita guardada con éxito:', inserted);
+
+        // Agregamos la cita devuelta por Supabase al estado para que aparezca en pantalla
+        if (inserted) {
+          setAppointments([inserted, ...appointments]);
+        }
+        
         await refreshAdminAppointments();
       } catch (err) {
-        console.error('add appt error', err);
+        console.error('Error al guardar la cita en Supabase:', err);
+        alert('No se pudo sincronizar la cita con el servidor, pero el proceso continuará.');
       }
     }
 
+    // --- ESTO NO LO TOCAMOS (Tú lógica original para avanzar de pantalla) ---
     setStep('confirmation');
     setCart([]);
     setSelectedDate(null);
