@@ -4,6 +4,9 @@ import { Calendar as CalendarIcon, RefreshCw, X, Check, AlertTriangle } from 'lu
 const formatDate = (date) => date || '---';
 
 const AppointmentCard = ({ appt, onReschedule, onCancel, onTogglePaid }) => {
+  // Verificación extrema por si la cita es nula
+  if (!appt) return null;
+
   const isPaid = (appt.paid ?? (appt.status?.toLowerCase().includes('confirm') || appt.status?.toLowerCase().includes('pagado')));
   const statusLabel = appt.status || 'Pendiente';
 
@@ -85,7 +88,7 @@ const AppointmentCard = ({ appt, onReschedule, onCancel, onTogglePaid }) => {
 };
 
 const AdminView = ({
-  appointments,
+  appointments = [],
   setStep,
   startReschedule,
   cancelAppointment,
@@ -93,12 +96,17 @@ const AdminView = ({
 }) => {
   const groupedByDate = useMemo(() => {
     const groups = {};
+    
+    // --- AQUÍ ESTÁ EL ARREGLO PRINCIPAL ---
     (appointments || []).forEach(appt => {
+      // Si la cita por alguna razón es nula o indefinida, la ignoramos y no se rompe la app
+      if (!appt) return; 
+      
       const key = appt.date || 'Sin fecha';
       groups[key] = groups[key] || [];
       groups[key].push(appt);
     });
-    // sort dates (newest first) if possible
+    
     const sortedKeys = Object.keys(groups).sort((a, b) => {
       return a.localeCompare(b);
     });
@@ -131,13 +139,16 @@ const AdminView = ({
               <h3 className="text-lg font-bold text-primary">{date}</h3>
               <div className="grid gap-4">
                 {items.map(appt => (
-                  <AppointmentCard
-                    key={appt.id}
-                    appt={appt}
-                    onReschedule={startReschedule}
-                    onCancel={cancelAppointment}
-                    onTogglePaid={togglePaidStatus}
-                  />
+                  // Añadimos otra capa de seguridad aquí por si las moscas
+                  appt && (
+                    <AppointmentCard
+                      key={appt.id}
+                      appt={appt}
+                      onReschedule={startReschedule}
+                      onCancel={cancelAppointment}
+                      onTogglePaid={togglePaidStatus}
+                    />
+                  )
                 ))}
               </div>
             </section>

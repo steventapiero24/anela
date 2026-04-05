@@ -402,16 +402,38 @@ const App = () => {
     }
   };
 
-  const togglePaidStatus = async (appt) => {
-    const isPaid = (appt.paid ?? (appt.status?.toLowerCase().includes('confirm') || appt.status?.toLowerCase().includes('pagado')));
-    const newStatus = isPaid ? 'Pendiente' : 'Confirmado';
+const togglePaidStatus = async (appointment) => {
+    if (!appointment || !appointment.id) return;
 
     try {
-      const updated = await dbUpdateAppointment(appt.id, { status: newStatus });
-      setAppointments(appointments.map(a => (a.id === appt.id ? updated : a)));
-      setAdminAppointments(adminAppointments.map(a => (a.id === appt.id ? updated : a)));
+      console.log('[AGENDA] Cambiando estado de pago para cita:', appointment.id);
+      
+      // Averiguamos si ya estaba pagado leyendo el status actual
+      const isPaid = appointment.status === 'Pagado' || appointment.status === 'Confirmado';
+      
+      // 1. SOLO actualizamos la columna 'status' en el objeto que mandamos a Supabase
+      const updatedData = { 
+        status: isPaid ? 'Pendiente' : 'Pagado' 
+      };
+      
+      await dbUpdateAppointment(appointment.id, updatedData);
+      console.log('[AGENDA] Estado de pago guardado en Supabase');
+
+      // 2. Actualizamos la lista en pantalla
+      const updateList = (list) => 
+        (list || []).map(appt => {
+          if (!appt) return appt; 
+          return appt.id === appointment.id 
+            ? { ...appt, ...updatedData } 
+            : appt;
+        });
+
+      setAppointments(updateList(appointments));
+      setAdminAppointments(updateList(adminAppointments));
+      
     } catch (err) {
       console.error('[AGENDA] togglePaidStatus error', err);
+      alert('No se pudo actualizar el estado de pago en el servidor.');
     }
   };
 
