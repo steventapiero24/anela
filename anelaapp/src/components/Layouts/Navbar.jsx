@@ -7,16 +7,16 @@ const Navbar = ({ currentStep, setStep, user }) => {
       {/* Inicio */}
       <button 
         onClick={() => setStep('home')} 
-        className={`flex flex-col items-center gap-1.5 transition-all ${currentStep === 'home' ? 'text-[#3D5645] scale-110' : 'text-gray-300'}`}
+        className={`flex flex-col items-center gap-1.5 transition-all ${currentStep === 'home' ? 'text-primary scale-110' : 'text-gray-300'}`}
       >
-        <LayoutDashboard size={24} className={currentStep === 'home' ? 'fill-[#3D5645]/10' : ''} />
+        <LayoutDashboard size={24} className={currentStep === 'home' ? 'fill-primary/10' : ''} />
         <span className={`text-[8px] font-black uppercase tracking-widest ${currentStep === 'home' ? 'opacity-100' : 'opacity-0'}`}>Inicio</span>
       </button>
 
       {/* Explorar */}
       <button 
         onClick={() => { setStep('services'); }} 
-        className={`flex flex-col items-center gap-1.5 transition-all ${currentStep === 'services' ? 'text-[#3D5645] scale-110' : 'text-gray-300'}`}
+        className={`flex flex-col items-center gap-1.5 transition-all ${currentStep === 'services' ? 'text-primary scale-110' : 'text-gray-300'}`}
       >
         <Search size={24} />
         <span className={`text-[8px] font-black uppercase tracking-widest ${currentStep === 'services' ? 'opacity-100' : 'opacity-0'}`}>Explorar</span>
@@ -30,12 +30,12 @@ const Navbar = ({ currentStep, setStep, user }) => {
       {/* Perfil / Login */}
       <button 
         onClick={() => user ? setStep('profile') : setStep('payment')} 
-        className={`flex flex-col items-center gap-1.5 transition-all ${(user && currentStep === 'profile') || currentStep === 'payment' ? 'text-[#3D5645] scale-110' : 'text-gray-300'}`}
+        className={`flex flex-col items-center gap-1.5 transition-all ${(user && currentStep === 'profile') || currentStep === 'payment' ? 'text-primary scale-110' : 'text-gray-300'}`}
       >
         {user ? (
           <img 
             src={user.avatar} 
-            className={`w-7 h-7 rounded-xl transition-all ${currentStep === 'profile' ? 'ring-2 ring-[#3D5645] ring-offset-2 shadow-lg scale-110' : ''}`} 
+            className={`w-7 h-7 rounded-xl transition-all ${currentStep === 'profile' ? 'ring-2 ring-primary ring-offset-2 shadow-lg scale-110' : ''}`} 
             alt="avatar" 
           />
         ) : (

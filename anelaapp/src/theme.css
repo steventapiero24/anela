@@ -1,0 +1,58 @@
+@font-face {
+  font-family: 'Futura';
+  src: url('/src/assets/fonts/futura-std-4/FuturaStdBook.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Futura';
+  src: url('/src/assets/fonts/futura-std-4/FuturaStdBold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Colores de tema */
+  --color-primary: #565C4B;
+  --color-primary-light: #FFF988;
+  --color-secondary: #FFC2C4;
+  --color-secondary-light: #BED393;
+
+  /* Texto */
+  --color-text-dark: #1A1A1A;
+  --color-text-light: #F4F4F4;
+
+  /* Fondo */
+  --color-bg: #F4F4F4;
+
+  /* Sombras */
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 0 0 18px rgba(61, 86, 69, 0.08);
+}
+
+/* Fallback utilities (in case Tailwind doesn’t generate them) */
+.bg-primary { background-color: var(--color-primary); }
+.text-primary { color: var(--color-primary); }
+.bg-primary-light { background-color: var(--color-primary-light); }
+.text-primary-light { color: var(--color-primary-light); }
+.bg-secondary { background-color: var(--color-secondary); }
+.text-secondary { color: var(--color-secondary); }
+.bg-secondary-light { background-color: var(--color-secondary-light); }
+.text-secondary-light { color: var(--color-secondary-light); }
+.shadow-soft { box-shadow: var(--shadow-soft); }
+.shadow-glow { box-shadow: var(--shadow-glow); }
+
+/* Botón con hover suave */
+.btn-agenda {
+  background-color: var(--color-secondary-light);
+  transition: .3s ease;
+  color: var(--color-primary);
+}
+
+.btn-agenda:hover {
+  background-color: var(--color-secondary);
+  color: var(--color-primary);
+}

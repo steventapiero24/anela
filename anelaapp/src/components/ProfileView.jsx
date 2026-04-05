@@ -7,7 +7,7 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
       <div className="relative">
         <img src={isEditingProfile ? editForm.avatar : user.avatar} className="w-32 h-32 rounded-[3rem] bg-white shadow-xl p-1 border border-gray-100" alt="Profile" />
         {isEditingProfile && (
-          <div className="absolute -bottom-2 -right-2 bg-[#3D5645] text-white p-2 rounded-xl shadow-lg border-2 border-white">
+          <div className="absolute -bottom-2 -right-2 bg-primary text-white p-2 rounded-xl shadow-lg border-2 border-white">
             <Check size={16} />
           </div>
         )}
@@ -17,7 +17,19 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
         <>
           <h2 className="text-2xl font-black mt-6 tracking-tight">{user.full_name}</h2>
           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">Cliente VIP</p>
-          <button onClick={() => setIsEditingProfile(true)} className="mt-4 flex items-center gap-2 bg-white px-6 py-2 rounded-xl text-[10px] font-bold text-[#3D5645] shadow-sm border border-gray-100">
+          <button 
+            onClick={() => {
+              // Llenamos el formulario con los datos actuales antes de abrir la edición
+              setEditForm({
+                full_name: user.full_name || '',
+                email: user.email || user.profiles?.email || '',
+                phone: user.phone || user.profiles?.phone || '',
+                avatar: user.avatar || ''
+              });
+              setIsEditingProfile(true);
+            }} 
+            className="mt-4 flex items-center gap-2 bg-white px-6 py-2 rounded-xl text-[10px] font-bold text-primary shadow-sm border border-gray-100"
+          >
             <Edit3 size={14} /> Editar Perfil
           </button>
         </>
@@ -30,7 +42,7 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
                 <button 
                   key={index} 
                   onClick={() => setEditForm({...editForm, avatar: url})}
-                  className={`min-w-[64px] h-16 rounded-2xl overflow-hidden border-4 transition-all ${editForm.avatar === url ? 'border-[#3D5645] scale-110 shadow-lg' : 'border-white opacity-60'}`}
+                  className={`min-w-[64px] h-16 rounded-2xl overflow-hidden border-4 transition-all ${editForm.avatar === url ? 'border-primary scale-110 shadow-lg' : 'border-white opacity-60'}`}
                 >
                   <img src={url} className="w-full h-full bg-gray-50" alt={`Avatar ${index}`} />
                 </button>
@@ -47,7 +59,7 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
               className="w-full p-4 bg-white rounded-2xl border-none text-center font-bold text-lg shadow-sm"
             />
             <div className="flex gap-2">
-              <button onClick={handleSaveProfile} className="flex-1 bg-[#3D5645] text-white py-3 rounded-xl font-bold text-[10px] uppercase flex items-center justify-center gap-2">
+              <button onClick={handleSaveProfile} className="flex-1 bg-primary text-white py-3 rounded-xl font-bold text-[10px] uppercase flex items-center justify-center gap-2">
                 <Save size={14}/> Guardar Cambios
               </button>
               <button onClick={() => {setIsEditingProfile(false); setEditForm({full_name: user.full_name, email: user.email, phone: user.phone, avatar: user.avatar})}} className="px-6 bg-white text-gray-400 py-3 rounded-xl font-bold text-[10px] uppercase border border-gray-100">
@@ -60,27 +72,29 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
     </div>
 
     <section className="space-y-3">
-      <h3 className="font-bold text-lg px-2 text-[#3D5645]">Información Personal</h3>
+      <h3 className="font-bold text-lg px-2 text-primary">Información Personal</h3>
       <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-gray-100 space-y-4">
         <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#3D5645] shadow-sm"><Mail size={18}/></div>
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-primary shadow-sm"><Mail size={18}/></div>
           <div className="flex-1">
             <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Email</p>
             {isEditingProfile ? (
                <input type="email" value={editForm.email} onChange={(e) => setEditForm({...editForm, email: e.target.value})} className="text-xs font-bold bg-transparent border-b border-gray-200 outline-none w-full" />
             ) : (
-              <p className="text-xs font-bold">{user.email}</p>
+              // Buscamos en user.email o en user.profiles?.email
+              <p className="text-xs font-bold">{user.email || user.profiles?.email || 'Sin email'}</p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#3D5645] shadow-sm"><Phone size={18}/></div>
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-primary shadow-sm"><Phone size={18}/></div>
           <div className="flex-1">
             <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Teléfono</p>
             {isEditingProfile ? (
                <input type="text" value={editForm.phone} onChange={(e) => setEditForm({...editForm, phone: e.target.value})} className="text-xs font-bold bg-transparent border-b border-gray-200 outline-none w-full" />
             ) : (
-              <p className="text-xs font-bold">{user.phone}</p>
+              // Buscamos en user.phone o en user.profiles?.phone
+              <p className="text-xs font-bold">{user.phone || user.profiles?.phone || 'Sin teléfono'}</p>
             )}
           </div>
         </div>
@@ -88,7 +102,7 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
     </section>
 
     <div className="grid grid-cols-2 gap-4">
-      <div className="bg-[#3D5645] p-6 rounded-[2.5rem] text-white flex flex-col justify-between aspect-square shadow-xl shadow-[#3D5645]/20">
+      <div className="bg-primary p-6 rounded-[2.5rem] text-white flex flex-col justify-between aspect-square shadow-xl shadow-glow">
         <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><CalendarIcon size={20}/></div>
         <div>
           <p className="text-[10px] font-bold opacity-60 uppercase tracking-wider">Citas Activas</p>
@@ -96,23 +110,23 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
         </div>
       </div>
       <div className="bg-white p-6 rounded-[2.5rem] flex flex-col justify-between aspect-square shadow-sm border border-gray-100">
-        <div className="w-10 h-10 bg-gray-50 text-[#3D5645] rounded-xl flex items-center justify-center"><Heart size={20}/></div>
+        <div className="w-10 h-10 bg-gray-50 text-primary rounded-xl flex items-center justify-center"><Heart size={20}/></div>
         <div>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Puntos</p>
-          <p className="text-3xl font-black text-[#3D5645]">{user.points}</p>
+          <p className="text-3xl font-black text-primary">{user.points}</p>
         </div>
       </div>
     </div>
 
     <section className="space-y-4">
-      <h3 className="font-bold text-lg text-[#3D5645]">Historial de citas</h3>
+      <h3 className="font-bold text-lg text-primary">Historial de citas</h3>
       <div className="space-y-4">
         {appointments.length > 0 ? (
           appointments.map(appt => (
             <div key={appt.id} className="bg-white p-5 rounded-[2.5rem] border border-gray-50 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-[#3D5645]">
+                  <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-primary">
                     <Clock size={24} />
                   </div>
                   <div>
@@ -120,12 +134,12 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
                     <p className="text-[10px] text-gray-400 font-bold uppercase">{appt.date} • {appt.time}</p>
                   </div>
                 </div>
-                <span className="w-8 h-8 rounded-full bg-[#E8F0EA] flex items-center justify-center text-[#3D5645]">
+                <span className="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-primary">
                   <CheckCircle size={14} />
                 </span>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => startReschedule(appt)} className="flex-1 py-3 bg-[#3D5645] text-white rounded-2xl text-[10px] font-bold flex items-center justify-center gap-2">
+                <button onClick={() => startReschedule(appt)} className="flex-1 py-3 bg-primary text-white rounded-2xl text-[10px] font-bold flex items-center justify-center gap-2">
                   <RefreshCw size={14} /> Reagendar
                 </button>
                 <button onClick={() => cancelAppointment(appt.id)} className="px-5 py-3 bg-red-50 text-red-400 rounded-2xl text-[10px] font-bold">
