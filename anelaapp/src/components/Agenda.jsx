@@ -76,7 +76,7 @@ const App = () => {
     // Función para cargar datos del usuario
   // Función para cargar datos del usuario (CORREGIDA SIN BLOQUEOS)
   // Función para cargar datos del usuario
-    const loadUserData = async (userId) => {
+const loadUserData = async (userId) => {
       if (!mounted) return;
       try {
         console.log('[AGENDA] Loading user data for:', userId);
@@ -84,11 +84,11 @@ const App = () => {
         getUserProfile(userId)
           .then(profile => {
             if (profile && mounted) {
-              console.log('[AGENDA] Perfil cargado con éxito');
-              setUser(profile);
+              console.log('[AGENDA] Perfil cargado con éxito:', profile);
+              
+              // Directamente guardamos todo el profile que viene de la base de datos
+              setUser(profile); 
 
-              // --- NUEVA LÓGICA DE ATERRIZAJE ---
-              // Si al cargar el perfil vemos que es admin, lo mandamos a su panel
               const isUserAdmin = profile.is_admin || profile.email === 'admin@anela.com';
               if (isUserAdmin) {
                 setStep('admin');
@@ -100,7 +100,7 @@ const App = () => {
         fetchAppointments(userId)
           .then(appts => {
             if (appts && mounted) {
-              setAppointments(appts);
+              setAppointments(appts); 
             }
           })
           .catch(err => console.warn("[AGENDA] Error cargando citas:", err));

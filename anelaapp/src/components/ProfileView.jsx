@@ -17,7 +17,19 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
         <>
           <h2 className="text-2xl font-black mt-6 tracking-tight">{user.full_name}</h2>
           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">Cliente VIP</p>
-          <button onClick={() => setIsEditingProfile(true)} className="mt-4 flex items-center gap-2 bg-white px-6 py-2 rounded-xl text-[10px] font-bold text-primary shadow-sm border border-gray-100">
+          <button 
+            onClick={() => {
+              // Llenamos el formulario con los datos actuales antes de abrir la edición
+              setEditForm({
+                full_name: user.full_name || '',
+                email: user.email || user.profiles?.email || '',
+                phone: user.phone || user.profiles?.phone || '',
+                avatar: user.avatar || ''
+              });
+              setIsEditingProfile(true);
+            }} 
+            className="mt-4 flex items-center gap-2 bg-white px-6 py-2 rounded-xl text-[10px] font-bold text-primary shadow-sm border border-gray-100"
+          >
             <Edit3 size={14} /> Editar Perfil
           </button>
         </>
@@ -69,7 +81,8 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
             {isEditingProfile ? (
                <input type="email" value={editForm.email} onChange={(e) => setEditForm({...editForm, email: e.target.value})} className="text-xs font-bold bg-transparent border-b border-gray-200 outline-none w-full" />
             ) : (
-              <p className="text-xs font-bold">{user.email}</p>
+              // Buscamos en user.email o en user.profiles?.email
+              <p className="text-xs font-bold">{user.email || user.profiles?.email || 'Sin email'}</p>
             )}
           </div>
         </div>
@@ -80,7 +93,8 @@ const ProfileView = ({ user, setUser, setStep, isEditingProfile, setIsEditingPro
             {isEditingProfile ? (
                <input type="text" value={editForm.phone} onChange={(e) => setEditForm({...editForm, phone: e.target.value})} className="text-xs font-bold bg-transparent border-b border-gray-200 outline-none w-full" />
             ) : (
-              <p className="text-xs font-bold">{user.phone}</p>
+              // Buscamos en user.phone o en user.profiles?.phone
+              <p className="text-xs font-bold">{user.phone || user.profiles?.phone || 'Sin teléfono'}</p>
             )}
           </div>
         </div>
