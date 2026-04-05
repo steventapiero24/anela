@@ -81,22 +81,26 @@ const App = () => {
       try {
         console.log('[AGENDA] Loading user data for:', userId);
         
-        // 1. Cargar el perfil (Esto ya lo tienes)
         getUserProfile(userId)
           .then(profile => {
             if (profile && mounted) {
               console.log('[AGENDA] Perfil cargado con éxito');
               setUser(profile);
+
+              // --- NUEVA LÓGICA DE ATERRIZAJE ---
+              // Si al cargar el perfil vemos que es admin, lo mandamos a su panel
+              const isUserAdmin = profile.is_admin || profile.email === 'admin@anela.com';
+              if (isUserAdmin) {
+                setStep('admin');
+              }
             }
           })
           .catch(err => console.warn("[AGENDA] Error cargando perfil:", err));
 
-        // 2. ¡AQUÍ ESTÁ EL TRUCO! Cargamos las citas para que sean persistentes
         fetchAppointments(userId)
           .then(appts => {
             if (appts && mounted) {
-              console.log('[AGENDA] Citas cargadas con éxito:', appts.length);
-              setAppointments(appts); // Guardamos las citas de Supabase en el estado
+              setAppointments(appts);
             }
           })
           .catch(err => console.warn("[AGENDA] Error cargando citas:", err));
