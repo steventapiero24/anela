@@ -162,14 +162,20 @@ const App = () => {
   }, []);
 
   // --- ADMIN DATA (solo para administradores) ---
-  useEffect(() => {
+ useEffect(() => {
     const loadAdminAppointments = async () => {
       if (!user) return;
-      const isAdmin = user?.is_admin || user?.email === 'admin@anela.com';
+      
+      // Verificamos si es administrador
+      const isAdmin = user.is_admin || user.email === 'admin@anela.com';
+      console.log('[AGENDA] ¿Es admin?:', isAdmin);
+      
       if (!isAdmin) return;
 
       try {
+        console.log('[AGENDA] Cargando TODAS las citas para el admin...');
         const allAppts = await fetchAllAppointments();
+        console.log('[AGENDA] Citas totales encontradas para admin:', allAppts?.length || 0);
         setAdminAppointments(allAppts || []);
       } catch (err) {
         console.error('[AGENDA] loadAdminAppointments error', err);
@@ -359,14 +365,29 @@ const App = () => {
     setSelectedTime(null);
   };
 
-  const cancelAppointment = async (id) => {
-    setAppointments(appointments.filter(a => a.id !== id));
-    setAdminAppointments(adminAppointments.filter(a => a.id !== id));
+  
+
+ const cancelAppointment = async (id) => {
     try {
+      console.log('[AGENDA] Intentando cancelar cita en Supabase:', id);
+      
+      // 1. Borramos la cita en Supabase
       await dbDeleteAppointment(id);
+      console.log('[AGENDA] Cita borrada de la base de datos con éxito');
+
+      // 2. Quitamos la cita de la pantalla en la que está el usuario
+      setAppointments(appointments.filter(a => a.id !== id));
+      
+      // 3. La quitamos también de la pantalla del administrador
+      setAdminAppointments(adminAppointments.filter(a => a.id !== id));
+      
+      // 4. Actualizamos por si acaso
       await refreshAdminAppointments();
+      
+      alert('Cita cancelada con éxito.');
     } catch (err) {
-      console.error('delete appt error', err);
+      console.error('Error al cancelar la cita en Supabase:', err);
+      alert('No se pudo cancelar la cita en el servidor. Inténtalo de nuevo.');
     }
   };
 
