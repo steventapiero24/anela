@@ -289,8 +289,7 @@ const App = () => {
     }
   };
 
-
- const saveAppointment = async (options = {}) => {
+const saveAppointment = async (options = {}) => {
     const { userId, paymentMethod } = options;
     const currentUser = userId ? { id: userId } : user;
     if (!currentUser) return;
@@ -300,66 +299,68 @@ const App = () => {
       try {
         console.log('[AGENDA] Reagendando cita id:', reschedulingId);
         
-        // Creamos el objeto con los nuevos datos
         const updatedData = {
-          date: selectedDate || "24 Feb",
-          time: selectedTime || "10:00 AM",
-          // Calculamos el nuevo timestamp para que quede ordenado en Supabase
-          timestamp: new Date(`${selectedDate || '2026-02-24'} ${selectedTime || '10:00'}`).toISOString()
+          date: selectedDate, // Usamos la que elegiste en el calendario
+          time: selectedTime,
+          // Mantenemos el formato de timestamp que ya usas
+          timestamp: new Date().toISOString() 
         };
 
         // 1. Guardamos en Supabase
         await dbUpdateAppointment(reschedulingId, updatedData);
-        console.log('[AGENDA] Supabase actualizado con éxito');
 
-        // 2. Actualizamos la lista de citas en la interfaz de React
+        // 2. Actualizamos la lista de citas del USUARIO
         setAppointments(appointments.map(appt =>
-          appt.id === reschedulingId
-            ? { ...appt, ...updatedData }
-            : appt
+          appt.id === reschedulingId ? { ...appt, ...updatedData } : appt
         ));
 
-        // 3. Limpiamos el estado de reagendamiento
+        // 3. ¡IMPORTANTE! Actualizamos la lista del ADMIN para que el cambio se vea ya
+        setAdminAppointments(adminAppointments.map(appt =>
+          appt.id === reschedulingId ? { ...appt, ...updatedData } : appt
+        ));
+
+        // 4. Limpiamos el estado de reagendamiento
         setReschedulingId(null);
-        await refreshAdminAppointments();
         
       } catch (err) {
         console.error('Error al actualizar la cita en Supabase:', err);
         alert('No se pudo actualizar la fecha en el servidor.');
-        return; // Detenemos la función si falla para que no avance de pantalla
+        return; 
       }
     } else {
       // --- CAMINO 2: CREACIÓN (CITA TOTALMENTE NUEVA) ---
-      // Este es el bloque que ya tenías funcionando perfectamente
       const payload = {
         user_id: currentUser.id,
         services: cart, 
-        date: selectedDate || "24 Feb",
-        time: selectedTime || "10:00 AM",
+        date: selectedDate,
+        time: selectedTime,
         status: "pending", 
         timestamp: new Date().toISOString()
       };
       
       try {
-        console.log('[AGENDA] Intentando guardar cita nueva en Supabase:', payload);
-        
         const inserted = await dbAddAppointment(payload);
-        
         if (inserted) {
-          console.log('[AGENDA] Cita nueva guardada con éxito');
           setAppointments([inserted, ...appointments]);
+          setAdminAppointments([inserted, ...adminAppointments]);
         }
-        
-        await refreshAdminAppointments();
       } catch (err) {
         console.error('Error al guardar la cita en Supabase:', err);
-        alert('No se pudo sincronizar la cita con el servidor, pero el proceso continuará.');
       }
     }
 
-    // --- FINALIZACIÓN (COMÚN PARA AMBOS CAMINOS) ---
-    // Limpia el carrito, quita fechas y te manda a la pantalla de confirmación
-    setStep('confirmation');
+    // --- FINALIZACIÓN INTELIGENTE ---
+    // Si el que está logueado es el Admin, lo mandamos de vuelta a su panel
+    // Si es un cliente, lo mandamos a la pantalla de confirmación
+    const isAdmin = user?.email === 'admin@anela.com';
+    
+    if (isAdmin) {
+      setStep('admin');
+    } else {
+      setStep('confirmation');
+    }
+
+    // Limpieza de interfaz
     setCart([]);
     setSelectedDate(null);
     setSelectedTime(null);
@@ -445,6 +446,8 @@ const togglePaidStatus = async (appointment) => {
     setStep('calendar');
   };
 
+  
+
   const handleSaveProfile = async () => {
     const updated = { ...user, ...editForm };
     setUser(updated);
@@ -514,16 +517,22 @@ const togglePaidStatus = async (appointment) => {
 
       <main className={`px-6 space-y-8 animate-in ${step === 'profile' ? 'pt-16' : ''}`}>
         
-        {/* HOME VIEW */}
-        {step === 'home' && !isAdmin && <HomeView appointments={appointments} setStep={setStep} CATEGORIES={CATEGORIES} SERVICES={filteredServices} cart={cart} addToCart={addToCart} startReschedule={startReschedule} cancelAppointment={cancelAppointment} setSelectedCategory={setSelectedCategory} />}
+        {/* HOME VIEW: Solo para clientes */}
+        {step === 'home' && !isAdmin && (
+          <HomeView appointments={appointments} setStep={setStep} CATEGORIES={CATEGORIES} SERVICES={filteredServices} cart={cart} addToCart={addToCart} startReschedule={startReschedule} cancelAppointment={cancelAppointment} setSelectedCategory={setSelectedCategory} />
+        )}
 
-        {/* SERVICES VIEW */}
-        {!isAdmin && step === 'services' && <ServicesView setStep={setStep} selectedCategory={selectedCategory} SERVICES={filteredServices} cart={cart} addToCart={addToCart} />}
+        {/* SERVICES VIEW: Ahora el admin puede entrar si está reagendando */}
+        {step === 'services' && (
+          <ServicesView setStep={setStep} selectedCategory={selectedCategory} SERVICES={filteredServices} cart={cart} addToCart={addToCart} />
+        )}
 
-        {/* CALENDAR VIEW */}
-        {!isAdmin && step === 'calendar' && <CalendarView setStep={setStep} cart={cart} removeFromCart={removeFromCart} CATEGORIES={CATEGORIES} selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTime={selectedTime} setSelectedTime={setSelectedTime} user={user} saveAppointment={saveAppointment} reschedulingId={reschedulingId} />}
+        {/* CALENDAR VIEW: ¡QUITAMOS EL !isAdmin PARA QUE EL ADMIN PUEDA ENTRAR! */}
+        {step === 'calendar' && (
+          <CalendarView setStep={setStep} cart={cart} removeFromCart={removeFromCart} CATEGORIES={CATEGORIES} selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTime={selectedTime} setSelectedTime={setSelectedTime} user={user} saveAppointment={saveAppointment} reschedulingId={reschedulingId} />
+        )}
 
-        {/* AUTH VIEW */}
+        {/* AUTH/PAYMENT VIEW */}
         {step === 'payment' && (
           <PaymentView
             handleAuth={handleAuth}
